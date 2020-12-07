@@ -1,2 +1,3 @@
 # covid_preemption
-indoor dining &amp; preemption project
+indoor dining preemption project
+
