@@ -733,5 +733,5 @@ means<-county_cases2%>%
 means_2<-county_cases2%>%
   group_by(treat1, pre_post)%>%
   summarize(mean=mean(case_rate))
-
+asdfa
 
