@@ -16,6 +16,7 @@ library(arm)
 library(sandwich)
 library(MASS)
 library(lmtest)
+library(emmeans)
 #import data files
 load("daily_count.Rdata")
 load("event_model1.Rdata")
@@ -38,18 +39,18 @@ philly<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us
   geom_line()+
   ylim(0,500)+
   scale_x_date(breaks="1 month", date_labels = "%b") +
-  annotate("segment", x=ymd("2020-07-03"), xend=ymd("2020-07-03"),
-           yend=150, y=440, arrow=arrow(), size=2)+
+  annotate("segment", x=ymd("2020-06-26"), xend=ymd("2020-06-26"),
+           yend=150, y=380, arrow=arrow(), size=2)+
   annotate("segment", x=ymd("2020-09-08"), xend=ymd("2020-09-08"),
            yend=150, y=460, arrow=arrow(), size=2, color="red")+
-  annotate("text", label="PA Reopens", x=ymd("2020-07-03"), y=440,
+  annotate("text", label="Philly allowed to reopen", x=ymd("2020-07-03"), y=381,
            color="black", size=4,hjust=0.5, vjust=-0.1)+
   annotate("text", label="Philly Reopens", x=ymd("2020-09-08"), y=460,
            color="black", size=4,hjust=0.5, vjust=-0.1)+
   labs(title = "Rolling 7-day averages of new COVID cases", 
        y = "New Cases",
        x = "Date")  +
-  theme_bw()
+  theme_bw()+ theme(plot.title = element_text(size=12))
 
 philly
 #Mineapolis
@@ -74,7 +75,7 @@ indianapolis<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/mas
   labs(title = "Rolling 7-day averages of new COVID cases", 
        y = "New Cases",
        x = "Date")  +
-  theme_bw()
+  theme_bw() + theme(plot.title = element_text(size=12))
 indianapolis
 
 #PORTLAND
@@ -405,10 +406,6 @@ rse_mod_nb3c<-exp(coeftest(mod_nb3c, vcov = vcovHC,  cluster= ~cities))
 rci_mod_nb3c<-exp(coefci(mod_nb3c, vcov = vcovHC,  cluster= ~cities))
 rci_mod_nb3c
 
-#delete this-- it was just for academy health abstract 
-county_cases2_LV<-county_cases2%>%
-  filter(cities!="Las Vegas")
-
 #compare models 
 models <- list(mod_nb1, mod_nb1off, mod_nb2off, mod_nb3)
 models1<-list(mod_nb3a, mod_nb3b, mod_nb3c)
@@ -510,7 +507,6 @@ rci_mod_s2f1<-exp(coefci(mod_s1f1, vcov = vcovHC,  cluster= ~cities))
 summary(mod_s2f2<-glm.nb(daily_deaths~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_deaths2f))
 rse_mod_s2f2<-exp(coeftest(mod_s1f2, vcov = vcovHC,  cluster= ~cities))
 rci_mod_s2f2<-exp(coefci(mod_s1f2, vcov = vcovHC,  cluster= ~cities))
-
 
 ##model output model outpumodel output model output model output model output t 
 #changes in lag periods  
@@ -641,39 +637,40 @@ robust_ci_death<-list(rci_mod_ds1b, rci_mod_ds1c, rci_mod_ds1d, rci_mod_ds1e)
 #base model 
 #just weeks
 
-summary(mod_e1<-glm.nb(daily_count~weeks_prior+ weeks_post + offset(log(pop/100000)),  data=event_model1))
+summary(mod_e1<-glm.nb(daily_count~ weeks_prior + weeks_post + offset(log(pop/100000)),  data=event_model3))
 stargazer(mod_e1, apply.coef = exp, type='text')
-rse_mod_ds1c<-exp(coeftest(mod_ds1c, vcov = vcovHC,  cluster= ~cities))
-rci_mod_ds1c<-exp(coefci(mod_ds1c, vcov = vcovHC,  cluster= ~cities))
+rse_mod__e1<-exp(coeftest(mod_e1, vcov = vcovHC,  cluster= ~cities))
+rci_mod_e1<-exp(coefci(mod_e1, vcov = vcovHC,  cluster= ~cities))
 
 #adding city fixed effects (as dummies)
-summary(mod_e2<-glm.nb(daily_count~weeks_prior +weeks_post + factor(cities) + offset(log(pop/100000)),  data=event_model1))
-rse_mod_ds1c<-exp(coeftest(mod_ds1c, vcov = vcovHC,  cluster= ~cities))
-rci_mod_ds1c<-exp(coefci(mod_ds1c, vcov = vcovHC,  cluster= ~cities))
+summary(mod_e2<-glm.nb(daily_count~weeks_prior +weeks_post + factor(cities) + offset(log(pop/100000)),  data=event_model3))
+rse_mod_e2<-exp(coeftest(mod_e2, vcov = vcovHC,  cluster= ~cities))
+rci_mod_e2<-exp(coefci(mod_e2, vcov = vcovHC,  cluster= ~cities))
 
 #adding calendar week fixed effects (as dummies)
-summary(mod_e3<-glm.nb(daily_count~weeks_prior +weeks_post + factor(cal_week) + factor(cities) + offset(log(pop/100000)),  data=event_model1))
-rse_mod_ds1c<-exp(coeftest(mod_ds1c, vcov = vcovHC,  cluster= ~cities))
-rci_mod_ds1c<-exp(coefci(mod_ds1c, vcov = vcovHC,  cluster= ~cities))
+summary(mod_e3<-glm.nb(daily_count~weeks_prior +weeks_post + factor(cal_week) + factor(cities) + offset(log(pop/100000)),  data=event_model3))
+rse_mod_e3<-exp(coeftest(mod_e3, vcov = vcovHC,  cluster= ~cities))
+rci_mod_e3<-exp(coefci(mod_e3, vcov = vcovHC,  cluster= ~cities))
 
 #adding mask mandate
-summary(mod_e4a<-glm.nb(daily_count~weeks_prior +weeks_post+ factor(cal_week) + factor(cities) +mask_week + offset(log(pop/100000)),  data=event_model1))
-rse_mod_ds1c<-exp(coeftest(mod_ds1c, vcov = vcovHC,  cluster= ~cities))
-rci_mod_ds1c<-exp(coefci(mod_ds1c, vcov = vcovHC,  cluster= ~cities))
+summary(mod_e4a<-glm.nb(daily_count~weeks_prior +weeks_post+ factor(cal_week) + factor(cities) +mask_week + offset(log(pop/100000)),  data=event_model3))
+rse_mod_e4a<-exp(coeftest(mod_e4a, vcov = vcovHC,  cluster= ~cities))
+rci_mod_e4a<-exp(coefci(mod_e4a, vcov = vcovHC,  cluster= ~cities))
 
 #adding stay at home order 
-summary(mod_e4b<-glm.nb(daily_count~weeks_prior + weeks_post + factor(cal_week) + factor(cities) +mask_week + stay_week+ offset(log(pop/100000)),  data=event_model1))
+summary(mod_e4b<-glm.nb(daily_count~weeks_prior + weeks_post + factor(cal_week) + factor(cities) +mask_week + stay_week+ offset(log(pop/100000)),  data=event_model3))
+rse_mod_e4b<-exp(coeftest(mod_e4b, vcov = vcovHC,  cluster= ~cities))
+rci_mod_e4b<-exp(coefci(mod_e4b, vcov = vcovHC,  cluster= ~cities))
 
 #adding eviction ban
-summary(mod_e4c<-glm.nb(daily_count~ weeks_prior + weeks_post + factor(cal_week) + factor(cities) +mask_week + stay_week+ evict_week + (log(pop/100000)),  data=event_model1))
-rse_mod_ds1c<-exp(coeftest(mod_ds1c, vcov = vcovHC,  cluster= ~cities))
-rci_mod_ds1c<-exp(coefci(mod_ds1c, vcov = vcovHC,  cluster= ~cities))
+summary(mod_e4c<-glm.nb(daily_count~ weeks_prior + weeks_post + factor(cal_week) + factor(cities) +mask_week + stay_week+ evict_week + (log(pop/100000)),  data=event_model3))
+rse_mod_e4c<-exp(coeftest(mod_e4c, vcov = vcovHC,  cluster= ~cities))
+rci_mod_e4c<-exp(coefci(mod_e4c, vcov = vcovHC,  cluster= ~cities))
 
 event_models<-list(mod_e1, mod_e2, mod_e3, mod_e4a, mod_e4b, mod_e4c)
 stargazer(event_models, apply.coef=exp, type="text", title="IRRs event model", out="results/table2_event.txt")
-rse_mod_ds1c<-exp(coeftest(mod_ds1c, vcov = vcovHC,  cluster= ~cities))
-rci_mod_ds1c<-exp(coefci(mod_ds1c, vcov = vcovHC,  cluster= ~cities))
-
+rse_mod_e<-list(rse_mod_e1, rse_mod_e2, rse_mod_e3, rse_mod_e4a, rse_mod_e4b, rse_mod_e4c)
+rci_mod_e<-list(rci_mod_e1, rci_mod_e2, rci_mod_e3, rci_mod_e4a, rci_mod_e4b, rci_mod_e4c)
 
 ###SENSITIVITY 1 
 #repeat model using 4+ for other NPIs
@@ -745,15 +742,20 @@ summary(mod_ed4c<-glm.nb(daily_deaths~ weeks_prior + weeks_post + factor(cal_wee
 event_models_d<-list(mod_ed1, mod_ed2, mod_ed3, mod_ed4a, mod_ed4b, mod_ed4c)
 stargazer(event_models_d, apply.coef=exp, type="text", title="IRRs event model death_4+", out="results/table2_event_death.txt")
 
-#check this it looks to similar to the case model.... 
-
 
 #estimate marginal effects 
 #can't use margins bc of the offset. 
 negbinmfx(formula, data, atmean = TRUE, robust = FALSE, clustervar1 = NULL, 
           clustervar2 = NULL, start = NULL, control = glm.control())
 
+emmeans(mod_nb3c,  ~treat1*pre_post, type="response")
 
+grpMeans<-emmeans(mod_nb3c, ~treat1*pre_post, data=county_cases2)
+grpMeans
+pairs(grpMeans)
+plot(grpMeans, comparisons=TRUE)
+plot(mod_nb3c)
+hist(resid(mod_nb3c))
 #descriptive data
 #county cases 
 #total cases 
