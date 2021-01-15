@@ -544,23 +544,40 @@ p<- ggplot(data=county_cases2, aes(x = time, y = daily_count)) +
         
         #graphing by week (event study)
         
-        means2<-event_model2%>%
+        means2<-event_model2m%>%
           group_by(treat1, weeks)%>%
-          summarize(ratemean=mean(case_rate), 
-                    casemean=mean(mean_cases))%>%
+          summarize(ratemean=mean(weekly_rate), 
+                    casemean=mean(weekly_newcases))%>%
           ungroup()
         means2
         
-        e1<-
-          ggplot(event_model2, aes(x=time, y=caserate_07da, group=treat1))+
-          geom_line(means2, aes(x=weeks, y=casemean, group=treat1, color=treat1)) +
-          geom_vline(xintercept=14) +
-          labs(title = "Weekly Average cases", 
-               y = "New weekly case rate per 100,000",
-               color = "Treament and Control", 
-               x ="Weeks Since Delayed Reopening")  +
-          stat_smooth(method="loess", se=FALSE, color="black" , aes=(color=as.factor(cities)))
-        e1 
+    
+        e1<-ggplot(event_model2m, aes(x = weeks, y = weekly_rate, group =treat1)) +
+          geom_line(data=means2, aes(x=weeks, y=ratemean, color=factor(treat1, labels = c("Control", "Treatment"))))+
+          labs(title = " Rolling 7 day average rate new COVID cases", 
+               color="Treat v Control",
+               y = "New case rate per 100,000",
+               x = "Days Since Delayed Reopening ") +
+          stat_smooth(method="loess", se=FALSE, color="black" , aes=(color=as.factor(cities))) 
+        
+        e1
+        
+        means2d<-event_model_death2m%>%
+          group_by(treat1, weeks)%>%
+          summarize(ratemean=mean(weekly_rate), 
+                    deathmean=mean(weekly_newdeaths))%>%
+          ungroup()
+        means2d
+        
+        e1<-ggplot(event_model_death2m, aes(x = weeks, y = weekly_rate, group =treat1)) +
+          geom_line(data=means2d, aes(x=weeks, y=ratemean, color=factor(treat1, labels = c("Control", "Treatment"))))+
+          labs(title = " Rolling 7 day average rate new COVID cases", 
+               color="Treat v Control",
+               y = "New case rate per 100,000",
+               x = "Days Since Delayed Reopening ") +
+          stat_smooth(method="loess", se=FALSE, color="black" , aes=(color=as.factor(cities))) 
+        
+        e1
         
         rate_mean1 <- ggplot(roll_avg, aes(x = time, y = caserate_07da, group =treat1)) +
           geom_line(data=means, aes(x=time, y=ratemean, color=factor(treat1, labels = c("Control", "Treatment"))))+

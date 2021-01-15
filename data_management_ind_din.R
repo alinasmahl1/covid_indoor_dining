@@ -74,7 +74,7 @@ county_cases1<-county_cases%>%
   mutate(daily_count = c(cases[1],diff(cases)))%>%
   mutate(date=as.Date(date, "%m/%d/%y"),
          treat_start=case_when(Admin2=="Fulton"~ "2020-04-27",
-                               Admin2=="Philadelphia"~"2020-07-03",
+                               Admin2=="Philadelphia"~"2020-06-26",
                                Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar", "Maricopa")~ "2020-05-01",
                                Admin2=="Multnomah"~"2020-05-15", 
                                Admin2=="Clark"~"2020-05-09", 
@@ -277,11 +277,11 @@ county_cases2f<-county_cases1%>%
   mutate(case_rate=daily_count/pop*100000)
 
 save(county_cases2,
-     county_case2a,
-     county_case2b,
-     county_case2c,
-     county_case2d,
-     county_case2e,
+     county_cases2a,
+     county_cases2b,
+     county_cases2c,
+     county_cases2d,
+     county_cases2e,
      county_cases2f, file="daily_count_2a.Rdata")
 
 #Event Study dataset
@@ -375,23 +375,15 @@ event_model<-county_cases1%>%
   #create rates  
   mutate(case_rate=daily_count/pop*100000)
 
-#probably pretty inefficient, but diff time calculates week as calendar dates, so 
-eventmodeltest<-event_model%>%  
-  mutate(weeks1=weeks+1, 
-         weeks2=case_when(time<0~0, 
-                          TRUE~as.numeric(weeks1)),
-         stay1=stay+1, 
-         stay2=case_)
 
 #create var that normalizes start date (1st treat day 1 = day 1 for all cities)
 event_model$time= as.numeric(difftime(event_model$date,event_model$treat_start, units = c("days")))
-
 event_model$weeks= as.integer(difftime(event_model$date,event_model$treat_start, units = c("weeks"), round()))
 #recode the control as zero 
 
 
 #not efficient but dif date uses calendar weeks, so wasn't working
-#may want to change the other NPI's to just 1-4+
+#treatment = reamining closed....
 
 event_model1<-event_model%>%
   mutate(weeks_prior=as.factor(case_when(
@@ -407,10 +399,6 @@ event_model1<-event_model%>%
     treat1==1 & time %in% c(-64:-70)~-10, 
     treat1==1 & time %in% c(-71:-77)~-11, 
     treat1==1 & time %in% c(-78:-84)~-12, 
-    treat1==1 & time %in% c(-85:-91)~-13, 
-    treat1==1 & time %in% c(-92:-98)~-14,
-    treat1==1 & time %in% c(-99:-105)~-15, 
-    treat1==1 & time %in% c(-106:-112)~-16,
     treat1==0 ~0, 
     TRUE~0)), 
     weeks_post=as.factor(case_when( 
@@ -426,10 +414,6 @@ event_model1<-event_model%>%
       treat1==1 & time %in% c(64:70)~10, 
       treat1==1 & time %in% c(71:77)~11, 
       treat1==1 & time %in% c(78:84)~12,
-      treat1==1 & time %in% c(85:91)~13, 
-      treat1==1 & time %in% c(92:98)~14,
-      treat1==1 & time %in% c(99:105) ~15, 
-      treat1==1 & time %in% c(106:112)~16,
       TRUE~0)),  
     #ordinal var for weeks since stay at home lifted
     #would expect beta to go in opposite direction bc cases likely increase after opening
@@ -512,6 +496,67 @@ event_model2<-event_model%>%
     treat1==1 & time %in% c(-64:-70)~-10, 
     treat1==1 & time %in% c(-71:-77)~-11, 
     treat1==1 & time %in% c(-78:-84)~-12, 
+    treat1==0 ~0, 
+    TRUE~0)), 
+    weeks_post=as.factor(case_when( 
+      treat1==1 & time %in% c(0:7)~1, 
+      treat1==1 & time %in% c(8:14)~2, 
+      treat1==1 & time %in% c(15:21)~3, 
+      treat1==1 & time %in% c(22:28)~4, 
+      treat1==1 & time %in% c(29:35)~5, 
+      treat1==1 & time %in% c(36:42)~6, 
+      treat1==1 & time %in% c(42:49)~7, 
+      treat1==1 & time %in% c(50:56)~8, 
+      treat1==1 & time %in% c(57:63)~9, 
+      treat1==1 & time %in% c(64:70)~10, 
+      treat1==1 & time %in% c(71:77)~11, 
+      treat1==1 & time %in% c(78:84)~12,
+      TRUE~0)),  
+    #ordinal var for weeks since stay at home lifted
+    #would expect beta to go in opposite direction bc cases likely increase after opening
+    stay_week=as.factor(case_when(
+      stay_days <0 ~0,
+      stay_days %in% c(0:7)~1, 
+      stay_days %in% c(8:14)~2, 
+      stay_days %in% c(15:21)~3, 
+      stay_days %in% c(22:28)~4, 
+      stay_days >28 ~ 5)), 
+    #creat var for weeks since mask mandate 
+    mask_week=as.factor(case_when(
+      mask_days <0 ~0, 
+      mask_days %in% c(0:7)~1, 
+      mask_days %in% c(8:14)~2, 
+      mask_days %in% c(15:21)~3, 
+      mask_days %in% c(22:28)~4, 
+      mask_days >28 ~5)), 
+    #create var for weeks since eviction 
+    ########need to fix this bc eviction bans had end dates
+    evict_days=case_when(date>eviction_end~-1, 
+                         TRUE~as.numeric(evict_days)),     
+    evict_week=as.factor(case_when(
+      evict_days <0 ~0, 
+      evict_days %in% c(0:7)~1, 
+      evict_days %in% c(8:14)~2, 
+      evict_days %in% c(15:21)~3, 
+      evict_days %in% c(22:28)~4, 
+      evict_days >28 ~5)))%>%
+  filter(time>-60 & time<84)
+
+#Event model sensitivity 2: limit study period to 4 weeks pre and 8 weeks (2 weeks lag + 6 weeks) (or 6 pre and 6 post)
+event_model3<-event_model%>%
+  mutate(weeks_prior=as.factor(case_when(
+    treat1==1 & time %in% c(-1:-7)~-1,
+    treat1==1 & time %in% c(-7:-14)~-2, 
+    treat1==1 & time %in% c(-15:-21)~-3, 
+    treat1==1 & time %in% c(-22:-28)~-4, 
+    treat1==1 & time %in% c(-29:-35)~-5, 
+    treat1==1 & time %in% c(-36:-42)~-6, 
+    treat1==1 & time %in% c(-42:-49)~-7, 
+    treat1==1 & time %in% c(-50:-56)~-8, 
+    treat1==1 & time %in% c(-57:-63)~-9, 
+    treat1==1 & time %in% c(-64:-70)~-10, 
+    treat1==1 & time %in% c(-71:-77)~-11, 
+    treat1==1 & time %in% c(-78:-84)~-12, 
     treat1==1 & time %in% c(-85:-91)~-13, 
     treat1==1 & time %in% c(-92:-98)~-14,
     treat1==1 & time %in% c(-99:-105)~-15, 
@@ -563,18 +608,17 @@ event_model2<-event_model%>%
       evict_days %in% c(8:14)~2, 
       evict_days %in% c(15:21)~3, 
       evict_days %in% c(22:28)~4, 
-      evict_days >28 ~5)))
-
-#Event model 2
-
+      evict_days >28 ~5)))%>%
+     filter(time>=-28 & time<=42)
+  
 #need to check dates and make sure that >112 days is out of the study period
 
-levels(event_model1$week)
 save(event_model1, file="event_model1.Rdata")
 
 
 #event model for graphing 
-event_model2<-event_model%>%
+event_model2m<-event_model%>%
+  filter(time>=-28 & time<=42)%>%
   mutate(weeks= as.factor(case_when(
     time %in% c(-1:-7)~-1,
     time %in% c(-7:-14)~-2, 
@@ -588,8 +632,7 @@ event_model2<-event_model%>%
     time %in% c(-64:-70)~-10, 
     time %in% c(-71:-77)~-11, 
     time %in% c(-78:-84)~-12,  
-    time %in% c(1:7)~1,
-    time==0~0,
+    time %in% c(0:7)~1,
     time %in% c(8:14)~2, 
     time %in% c(15:21)~3, 
     time %in% c(22:28)~4, 
@@ -606,7 +649,6 @@ event_model2<-event_model%>%
             weekly_rate=sum(case_rate))%>%
   ungroup()
 
-levels(event_model2$weeks)
 table(event_model2$weeks)
 
 save(event_model2, file="event_model2.Rdata")
@@ -942,9 +984,10 @@ event_model_death<-county_deaths1%>%
   #add in population counts
   left_join(population1)%>%
   #create rates  
-  mutate(case_rate=daily_deaths/pop*100000)
+  mutate(death_rate=daily_deaths/pop*100000)
 
 event_model_death1<-event_model_death%>%
+  filter(time>=-28 & time<=62)%>%
   mutate(weeks_prior=as.factor(case_when(
     treat1==1 & time %in% c(-1:-7)~-1,
     treat1==1 & time %in% c(-7:-14)~-2, 
@@ -1010,42 +1053,43 @@ event_model_death1<-event_model_death%>%
       evict_days %in% c(15:21)~3, 
       evict_days %in% c(22:28)~4, 
       evict_days >28 ~5)))
-levels(event_model_death1$week)
 save(event_model_death1, file="event_model_death1.Rdata")
 
-#event model for graphing 
 
-event_model_death2<-event_model_death%>%
-  mutate(weeks= as.factor(case_when(
-    time %in% c(-1:-7)~-1,
-    time %in% c(-7:-14)~-2, 
-    time %in% c(-15:-21)~-3, 
-    time %in% c(-22:-28)~-4, 
-    time %in% c(-29:-35)~-5, 
-    time %in% c(-36:-42)~-6, 
-    time %in% c(-42:-49)~-7, 
-    time %in% c(-50:-56)~-8, 
-    time %in% c(-57:-63)~-9, 
-    time %in% c(-64:-70)~-10, 
-    time %in% c(-71:-77)~-11, 
-    time %in% c(-78:-74)~-12,  
-    time %in% c(1:7)~1,
-    time==0~0,
-    time %in% c(8:14)~2, 
-    time %in% c(15:21)~3, 
-    time %in% c(22:28)~4, 
-    time %in% c(29:35)~5, 
-    time %in% c(36:42)~6, 
-    time %in% c(42:49)~7, 
-    time %in% c(50:56)~8, 
-    time %in% c(57:63)~9, 
-    time %in% c(64:70)~10, 
-    time %in% c(71:77)~11, 
-    time %in% c(78:74)~12)))%>%
-  group_by(weeks, treat1, cities)%>%
-  summarize(newdeaths=sum(daily_deaths),
-            death_rate=sum(death_rate))%>%
-  ungroup()
+#event model for graphing 
+#fix this 
+event_model_death2m<-event_model_death%>%
+    filter(time>=-28 & time<=62)%>%
+      mutate(weeks= as.factor(case_when(
+        time %in% c(-1:-7)~-1,
+        time %in% c(-7:-14)~-2, 
+        time %in% c(-15:-21)~-3, 
+        time %in% c(-22:-28)~-4, 
+        time %in% c(-29:-35)~-5, 
+        time %in% c(-36:-42)~-6, 
+        time %in% c(-42:-49)~-7, 
+        time %in% c(-50:-56)~-8, 
+        time %in% c(-57:-63)~-9, 
+        time %in% c(-64:-70)~-10, 
+        time %in% c(-71:-77)~-11, 
+        time %in% c(-78:-84)~-12,  
+        time %in% c(0:7)~1,
+        time %in% c(8:14)~2, 
+        time %in% c(15:21)~3, 
+        time %in% c(22:28)~4, 
+        time %in% c(29:35)~5, 
+        time %in% c(36:42)~6, 
+        time %in% c(42:49)~7, 
+        time %in% c(50:56)~8, 
+        time %in% c(57:63)~9, 
+        time %in% c(64:70)~10, 
+        time %in% c(71:77)~11, 
+        time %in% c(78:84)~12)))%>%
+      group_by(weeks, treat1, cities)%>%
+      summarize(weekly_newdeaths=sum(daily_deaths),
+                weekly_rate=sum(death_rate))%>%
+      ungroup()
+
 
 levels(event_model_death2$weeks)
 table(event_model_death2$weeks)
