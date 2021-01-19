@@ -14,14 +14,14 @@ county_cases<-fread("data/time_series_covid19_confirmed_US.csv")
 county_deaths<-fread("data/time_series_covid19_deaths_US.csv")
 #limit dataset to our counties/cities-- select cities wherever available 
 # for austin- city is code 48015 and coutny is 48453-- using county (bc don't trust city)
-cities<-c(42101,18097,32003, 41051, 4013, 48453, 48113, 48201,  48029, 13121,45019)
+cities<-c(42101,18097,6075, 55079, 4013, 48453, 48113, 48201,  48029, 13121,45019)
 
 #get county population estimates (Downloaded from here)-https://www.census.gov/data/datasets/time-series/demo/popest/2010s-counties-total.html
 population<-fread("data/co-est2019-annres.csv", header=TRUE)
 
 #names of counties of interest
 cities_pop<-c(".Philadelphia County, Pennsylvania", ".Marion County, Indiana", 
-              ".Clark County, Nevada", ".Multnomah County, Oregon", ".Maricopa County, Arizona", 
+              ".San Francisco County, California", ".Milwaukee County, Wisconsin", ".Maricopa County, Arizona", 
               ".Travis County, Texas", ".Dallas County, Texas", ".Harris County, Texas", 
               ".Bexar County, Texas", ".Fulton County, Georgia", ".Charleston County, South Carolina")
 
@@ -32,8 +32,8 @@ population1<-population%>%
   mutate(FIPS=case_when(
     V1==".Philadelphia County, Pennsylvania"~42101,
     V1==".Marion County, Indiana"~18097,
-    V1==".Clark County, Nevada"~32003, 
-    V1==".Multnomah County, Oregon"~41051, 
+    V1==".San Francisco County, California"~6075, 
+    V1==".Milwaukee County, Wisconsin"~55079, 
     V1==".Maricopa County, Arizona"~4013, 
     V1==".Travis County, Texas"~48453, 
     V1==".Dallas County, Texas"~48113, 
@@ -53,7 +53,7 @@ population1<-population%>%
 county_cases1<-county_cases%>%
   filter(FIPS %in% cities)%>%
   #create treatment/control var 
-  mutate(treat1=as.factor(case_when(Admin2%in% c("Philadelphia", "Marion", "Clark", "Multnomah")~1, 
+  mutate(treat1=as.factor(case_when(Admin2%in% c("Philadelphia", "Marion", "San Francisco", "Milwaukee")~1, 
                                     Admin2%in% c("Maricopa","Travis", "Bexar", "Dallas",	
                                                  "Harris", "Fulton", "Charleston")~0)))%>%
   select(UID, FIPS, Admin2, Province_State, '3/1/20':'11/1/20', treat1)%>%
@@ -61,8 +61,8 @@ county_cases1<-county_cases%>%
   #get daily count by taking difference from one day to next
   mutate(cities=as.factor(case_when(FIPS==42101~"Philadelphia",
                                     FIPS==18097~"Indianapolis", 
-                                    FIPS==32003~"Las Vegas", 
-                                    FIPS==41051~"Portland", 
+                                    FIPS==6075~"San Francisco", 
+                                    FIPS==55079~"Milwaukee", 
                                     FIPS==4013~"Pheonix", 
                                     FIPS==48453~"Austin", 
                                     FIPS==48113~"Dallas", 
@@ -76,8 +76,8 @@ county_cases1<-county_cases%>%
          treat_start=case_when(Admin2=="Fulton"~ "2020-04-27",
                                Admin2=="Philadelphia"~"2020-06-26",
                                Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar", "Maricopa")~ "2020-05-01",
-                               Admin2=="Multnomah"~"2020-05-15", 
-                               Admin2=="Clark"~"2020-05-09", 
+                               Admin2=="Milwaukee"~"2020-05-14", 
+                               Admin2=="San Francisco"~"2020-08-31", 
                                Admin2=="Marion"~"2020-05-11",
                                Admin2=="Charleston"~"2020-05-11"),
          treat_start=as.Date(treat_start, "%Y-%m-%d"), 
@@ -692,7 +692,7 @@ save(NewCasesTidy, file="NewCasesTidy.Rdata")
 county_deaths1<-county_deaths%>%
   filter(FIPS %in% cities)%>%
   #create treatment/control var 
-  mutate(treat1=as.factor(case_when(Admin2%in% c("Philadelphia", "Marion", "Clark", "Multnomah")~1, 
+  mutate(treat1=as.factor(case_when(Admin2%in% c("Philadelphia", "Marion", "San Francisco", "Milwaukee")~1, 
                                     Admin2%in% c("Maricopa","Travis", "Bexar", "Dallas",	
                                                  "Harris", "Fulton", "Charleston")~0)))%>%
   select(UID, FIPS, Admin2, Province_State, '3/1/20':'11/1/20', treat1)%>%
@@ -700,8 +700,8 @@ county_deaths1<-county_deaths%>%
   #get daily count by taking difference from one day to next
   mutate(cities=as.factor(case_when(FIPS==42101~"Philadelphia",
                                     FIPS==18097~"Indianapolis", 
-                                    FIPS==32003~"Las Vegas", 
-                                    FIPS==41051~"Portland", 
+                                    FIPS==6075~"San Francisco", 
+                                    FIPS==55079~"Milwaukee", 
                                     FIPS==4013~"Pheonix", 
                                     FIPS==48453~"Austin", 
                                     FIPS==48113~"Dallas", 
@@ -715,8 +715,8 @@ county_deaths1<-county_deaths%>%
          treat_start=case_when(Admin2=="Fulton"~ "2020-04-27",
                                Admin2=="Philadelphia"~"2020-06-26",
                                Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar", "Maricopa")~ "2020-05-01",
-                               Admin2=="Multnomah"~"2020-05-15", 
-                               Admin2=="Clark"~"2020-05-09", 
+                               Admin2=="Milwaukee"~"2020-05-14", 
+                               Admin2=="San Francisco"~"2020-08-31", 
                                Admin2=="Marion"~"2020-05-11",
                                Admin2=="Charleston"~"2020-05-11"),
          treat_start=as.Date(treat_start, "%Y-%m-%d"),
@@ -1128,18 +1128,14 @@ NewDeathsTidy <- roll_avg_death %>%
 save(NewDeathsTidy, file="NewdeathsTidy.Rdata")
 
 
-
-
 #SENSITIVITY ANALYSIS 
-
-# NEED TO REMOVE MIAMI AND ADD CHARLESTO
 
 #Dates using dates of reopenings for each city (not our actual study periods)
 #limit cases to counties of interest and time periods of study period
 county_cases_sens1<-county_cases%>%
   filter(FIPS %in% cities)%>%
   #create treatment/control var 
-  mutate(treat1=case_when(Admin2%in% c("Philadelphia", "Marion", "Clark", "Multnomah")~1, 
+  mutate(treat1=case_when(Admin2%in% c("Philadelphia", "Marion", "San Francisco", "Milwaukee")~1, 
                           Admin2%in% c("Maricopa","Travis", "Bexar", "Dallas",	
                                        "Harris", "Fulton", "Charleston", "Miami-Dade")~0))%>%
   select(UID, FIPS, Admin2, Province_State, '4/1/20':'10/1/20', treat1)%>%
@@ -1147,78 +1143,78 @@ county_cases_sens1<-county_cases%>%
   #get daily count by taking difference from one day to next
   mutate(cities=as.factor(case_when(FIPS==42101~"Philadelphia",
                                     FIPS==18097~"Indianapolis", 
-                                    FIPS==32003~"Las Vegas", 
-                                    FIPS==41051~"Portland", 
+                                    FIPS==6075~"San Francisco", 
+                                    FIPS==55079~"Milwaukee", 
                                     FIPS==4013~"Pheonix", 
                                     FIPS==48453~"Austin", 
                                     FIPS==48113~"Dallas", 
                                     FIPS==48201~"Houston", 
                                     FIPS==48029~ "San Antonio", 
-                                    FIPS==13121~"Atlanta", 
-                                    FIPS==45019~"Charleston")))%>%
-  group_by(FIPS)%>%
-  mutate(daily_count = c(cases[1],diff(cases)))%>%
-  mutate(date=as.Date(date, "%m/%d/%y"), 
-         #NEED TO DETERMINE IF WE WANT TO INCLUDE CHARLESTON
-         pre_post=case_when(
-           (Admin2=="Marion" &
-              between(date, "2020-05-04", "2020-05-31"))| 
-             (Admin2=="Clark" & 
-                between(date, "2020-05-07", "2020-06-03"))|
-             (Admin2=="Multnomah" &
-                between(date, "2020-05-22", "2020-06-18"))|
-             (Admin2=="Philadelphia" &
-                between(date,"2020-08-11", "2020-09-07"))|
-             #allof texas + arizona (Maricopa) have same dates
-             (Admin2 %in% c("Travis","Dallas", "Harris", "Bexar", "Maricopa") & 
-                between(date, "2020-04-03", "2020-05-01"))|
-             (Admin2=="Fulton" & 
-                between(date, "2020-03-30", "2020-04-26"))|
-             (Admin2=="Miami-Dade" &
-                between(date, "2020-04-20", "2020-05-17"))~0,  
-           (Admin2=="Marion" & 
-              between(date, "2020-06-01", "2020-06-29"))|
-             (Admin2=="Clark" & 
-                between(date, "2020-06-04", "2020-07-02"))| 
-             (Admin2=="Multnomah" &
-                between(date, "2020-06-19", "2020-07-17"))|
-             (Admin2=="Philadelphia"& 
-                between(date,"2020-09-08","2020-10-06"))|
-             (Admin2 %in% c("Travis","Dallas", "Harris", "Bexar", "Maricopa") & 
-                between(date, "2020-05-01", "2020-05-29"))|
-             (Admin2=="Fulton" &
-                between(date, "2020-04-27", "2020-05-25"))|
-             (Admin2=="Miami-Dade" &
-                between(date, "2020-05-18", "2020-06-15"))~1))%>%
-  #add in population counts
-  left_join(population1)%>%
-  #create rates  
-  mutate(case_rate=daily_count/pop*100000)%>%
-  ungroup()
-
-str(population1)
-str(county_cases1)
-levels(county_cases1$cities)
-
-#TBD on Miami-- need to confirm dates THEN ADD     
-#recode counts of <0 cases to zero 
-county_cases1$daily_count[county_cases1$daily_count< 0] <- 0
-
-
-########################
-#filter out the dates outside the study period (4 weeks before and after)
-county_cases_sens2<-county_cases_sens1%>%
-  filter(pre_post%in%c(0,1)) %>%
-  mutate(treat_start=case_when(Admin2=="Fulton"~ "2020-04-27",
-                               Admin2=="Philadelphia"~"2020-09-08",
-                               Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar", "Maricopa")~ "2020-05-01",
-                               Admin2=="Multnomah"~"2020-06-19", 
-                               Admin2=="Clark"~"2020-06-04", 
-                               Admin2=="Marion"~"2020-06-01",
-                               Admin2=="Miami-Dade"~"2020-05-18"),
-         #will need to add MIAMI
-         treat_start=as.Date(treat_start, "%Y-%m-%d")) 
-#create var that normalizes start date (1st treat day 1 = day 1 for all cities)
-county_cases2$time= difftime(county_cases2$date,county_cases2$treat_start, units = c("days"))
-
-save(county_cases_sens2, file="daily_count_sens.Rdata")
+                                    FIPS==13121~"Atlanta"), 
+         treat_start=as.Date(treat_start, "%Y-%m-%d"), 
+              stay_start=case_when(
+                                      #Atlanta
+                                      Admin2=="Fulton"~ "2020-05-01",
+                                      Admin2=="Philadelphia"~"2020-06-05",
+                                      Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar")~ "2020-05-01",
+                                      Admin2=="Maricopa" ~"2020-05-16",
+                                      #portland
+                                      Admin2=="Multnomah"~"2020-06-19", 
+                                      #las vegas
+                                      Admin2=="Clark"~"2020-05-09", 
+                                      #indianapolis
+                                      Admin2=="Marion"~"2020-05-18",
+                                      Admin2=="Charleston"~"2020-05-04"), 
+                                    stay_start=as.Date(stay_start, "%Y-%m-%d"), 
+                                    #create mask mandate var     
+                                    mask_start=case_when(#Atlanta
+                                      Admin2=="Fulton"~ "2020-07-08",
+                                      Admin2=="Philadelphia"~"2020-07-01",
+                                      Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar")~ "2020-07-03",
+                                      #phoenix
+                                      Admin2=="Maricopa"~"2020-06-20",
+                                      #portland
+                                      Admin2=="Multnomah"~"2020-07-01", 
+                                      #las vegas
+                                      Admin2=="Clark"~"2020-06-26", 
+                                      #indianapolis
+                                      Admin2=="Marion"~"2020-07-09",
+                                      Admin2=="Charleston"~"2020-07-01"), 
+                                    mask_start=as.Date(mask_start, "%Y-%m-%d"), 
+                                    #create end of eviction ban
+                                    eviction_start=case_when(
+                                      #Atlanta
+                                      Admin2=="Fulton"~ "2020-03-16",
+                                      Admin2=="Philadelphia"~"2020-03-18",
+                                      Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar", "Maricopa")~ "2020-03-19",
+                                      #portland
+                                      Admin2=="Multnomah"~"2020-04-01", 
+                                      #nevada
+                                      Admin2=="Clark"~"2020-03-29", 
+                                      #indianapolis
+                                      Admin2=="Marion"~"2020-03-19",
+                                      Admin2=="Charleston"~"2020-03-19"),
+                                    eviction_start=as.Date(eviction_start, "%Y-%m-%d"),
+                                    #var for end of eviction ban           
+                                    eviction_end=case_when(
+                                      #Atlanta
+                                      Admin2=="Fulton"~ "2020-10-31",
+                                      Admin2=="Philadelphia"~"2020-12-31",
+                                      Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar", "Maricopa")~ "2020-05-19",
+                                      #portland
+                                      Admin2=="Multnomah"~"2020-12-31", 
+                                      #las vegas
+                                      Admin2=="Clark"~"2020-10-14", 
+                                      #indianapolis
+                                      Admin2=="Marion"~"2020-08-14",
+                                      Admin2=="Charleston"~"2020-05-15"),
+                                    eviction_end=as.Date(eviction_end, "%Y-%m-%d"),
+                                    #create var that normalizes start date (1st treat day 1 = day 1 for all cities)
+                                    #create var that normalizes start date (1st treat day 1 = day 1 for all cities)
+                                    time= as.numeric(difftime(date,treat_start, units = c("days"))),
+                                    stay_days= as.integer(difftime(date,stay_start, units = c("days"))), 
+                                    mask_days=as.integer(difftime(date,mask_start, units = c("days"))), 
+                                    evict_days=as.integer(difftime(date,eviction_start, units = c("days"))),
+                                    evict_days_end=as.integer(difftime(date,eviction_end, units=c("days")))))
+                          county_cases_sens1$daily_count[county_cases_sens1$daily_count< 0] <- 0
+                          
