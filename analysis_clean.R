@@ -136,7 +136,7 @@ Milwaukee<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/mast
   labs(title = "Rolling 7-day averages of new COVID cases", 
        y = "New Cases",
        x = "Date") +
-  theme_bw()
+  theme_bw()+theme(plot.title = element_text(size=10)) 
 
 Milwaukee
 
@@ -160,7 +160,7 @@ Phoenix<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master
   labs(title = "Rolling 7-day averages of new COVID cases", 
        y = "New Cases",
        x = "Date") +
-  theme_bw()
+  theme_bw()+theme(plot.title = element_text(size=10)) 
 Phoenix
 
 #AUSTIN
@@ -183,7 +183,7 @@ Austin<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/
   labs(title = "Rolling 7-day averages of new COVID cases", 
        y = "New Cases",
        x = "Date") +
-  theme_bw()
+  theme_bw()+theme(plot.title = element_text(size=10)) 
 Austin
 
 #DALLAS
@@ -205,7 +205,7 @@ Dallas<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/
   labs(title = "Rolling 7-day averages of new COVID cases", 
        y = "New Cases",
        x = "Date") +
-  theme_bw()
+  theme_bw()+theme(plot.title = element_text(size=10)) 
 Dallas
 #San Antonio
 
@@ -227,7 +227,7 @@ SanAntonio<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/mas
   labs(title = "Rolling 7-day averages of new COVID cases", 
        y = "New Cases",
        x = "Date") +
-  theme_bw()
+  theme_bw()+theme(plot.title = element_text(size=10)) 
 SanAntonio
 
 #Houston
@@ -249,7 +249,7 @@ Houston<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master
   labs(title = "Rolling 7-day averages of new COVID cases", 
        y = "New Cases",
        x = "Date") +
-  theme_bw()
+  theme_bw()+theme(plot.title = element_text(size=10)) 
 Houston
   
 #ATLANTA
@@ -275,7 +275,7 @@ Atlanta<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master
   labs(title = "Rolling 7-day averages of new COVID cases", 
        y = "New Cases",
        x = "Date") +
-  theme_bw()
+  theme_bw()+theme(plot.title = element_text(size=10)) 
 Atlanta
 #CHARLESTON
 Charleston<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv") %>% 
@@ -296,7 +296,7 @@ Charleston<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/mas
   labs(title = "Rolling 7-day averages of new COVID cases", 
        y = "New Cases",
        x = "Date") +
-  theme_bw()
+  theme_bw()+theme(plot.title = element_text(size=10)) 
 Charleston
 
 #print all to PDF
@@ -313,7 +313,7 @@ multi.page <- ggarrange(Philly,
                         Charleston,
                         nrow = 2, ncol = 2)
 multi.page[[1]]
-ggexport(multi.page, filename = "figure_1.pdf")
+ggexport(multi.page, filename = "results/figure_1.pdf")
 
 ####################################################
 #Figure 1:Parallel trends assumption 
