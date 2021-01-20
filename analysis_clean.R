@@ -30,136 +30,152 @@ load("daily_count_deaths.Rdata")
 ####################################################
 #figures of each city w/ event + cases 
 #PHILADELPHIA 
-philly<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv") %>% 
-  filter(fips==42101) %>% 
-  mutate(date=ymd(date)) %>% 
+
+
+Philly<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv") %>% 
+  dplyr::select(UID, FIPS, Admin2,'3/1/20':'11/1/20')%>%
+  pivot_longer(!c(UID, FIPS, Admin2), names_to="date", values_to="cases")%>%
+  filter(FIPS==42101) %>%
+  mutate(date=as.Date(date, "%m/%d/%y"))%>%
   mutate(cases2=rollmean(cases, k=7, align="center",na.pad=T)) %>% 
   mutate(cases2=cases2-lag(cases2)) %>% 
   ggplot(aes(x=date, y=cases2)) + 
   geom_line()+
-  ylim(0,500)+
-  scale_x_date(breaks="1 month", date_labels = "%b") +
+  ylim(0,600)+
+  scale_x_date(breaks="1 month", date_labels = "%b", limits=as.Date(c('2020-03-01', '2020-10-01'))) +
   annotate("segment", x=ymd("2020-06-26"), xend=ymd("2020-06-26"),
            yend=150, y=380, arrow=arrow(), size=2)+
   annotate("segment", x=ymd("2020-09-08"), xend=ymd("2020-09-08"),
            yend=150, y=460, arrow=arrow(), size=2, color="red")+
-  annotate("text", label="Philly allowed to reopen", x=ymd("2020-07-03"), y=381,
-           color="black", size=4,hjust=0.5, vjust=-0.1)+
-  annotate("text", label="Philly Reopens", x=ymd("2020-09-08"), y=460,
-           color="black", size=4,hjust=0.5, vjust=-0.1)+
+  annotate("text", label="Philadelphia allowed to reopen", x=ymd("2020-07-03"), y=381,
+           color="black", size=3.5,hjust=0.5, vjust=-0.1)+
+  annotate("text", label="Philadelphia Reopens", x=ymd("2020-09-08"), y=460,
+           color="black", size=3.5,hjust=0.5, vjust=-0.1)+
   labs(title = "Rolling 7-day averages of new COVID cases", 
        y = "New Cases",
        x = "Date")  +
-  theme_bw()+ theme(plot.title = element_text(size=12))
+  theme_bw()+ theme(plot.title = element_text(size=10))
+Philly
 
-philly
-#Mineapolis
 
-indianapolis<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv") %>% 
-  filter(fips==18097) %>% 
-  mutate(date=ymd(date)) %>% 
+#Indianapolis
+
+Indianapolis<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv") %>% 
+  dplyr::select(UID, FIPS, Admin2,'3/1/20':'11/1/20')%>%
+  pivot_longer(!c(UID, FIPS, Admin2), names_to="date", values_to="cases")%>%
+  filter(FIPS==18097) %>% 
+  mutate(date=as.Date(date, "%m/%d/%y"))%>%
   mutate(cases2=rollmean(cases, k=7, align="center",na.pad=T)) %>% 
   mutate(cases2=cases2-lag(cases2)) %>% 
   ggplot(aes(x=date, y=cases2)) + 
   geom_line()+
   ylim(0,500)+
-  scale_x_date(breaks="1 month", date_labels = "%b") +
+  scale_x_date(breaks="1 month", date_labels = "%b", limits=as.Date(c('2020-03-01', '2020-10-01'))) +
   annotate("segment", x=ymd("2020-05-11"), xend=ymd("2020-05-11"),
            yend=150, y=440, arrow=arrow(), size=2)+
   annotate("segment", x=ymd("2020-06-01"), xend=ymd("2020-06-01"),
            yend=120, y=480, arrow=arrow(), size=2, color="red")+
-  annotate("text", label="IN Reopens", x=ymd("2020-05-11"), y=440,
-           color="black", size=4,hjust=0.5, vjust=-0.1)+
+  annotate("text", label="Indianapolis allowed to reopen", x=ymd("2020-05-11"), y=440,
+           color="black", size=3.5,hjust=0.5, vjust=-0.1)+
   annotate("text", label="Indianapolis Reopens", x=ymd("2020-06-01"), y=480,
-           color="black", size=4,hjust=0.5, vjust=-0.1)+
+           color="black", size=3.5,hjust=0.5, vjust=-0.1)+
   labs(title = "Rolling 7-day averages of new COVID cases", 
        y = "New Cases",
        x = "Date")  +
-  theme_bw() + theme(plot.title = element_text(size=12))
-indianapolis
+  theme_bw() + theme(plot.title = element_text(size=10))
+Indianapolis
 
 #San Francisco
-SanFrancisco<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv") %>% 
-  filter(fips==6075) %>% 
-  mutate(date=ymd(date)) %>% 
+
+SanFrancisco<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv") %>% 
+  dplyr::select(UID, FIPS, Admin2,'3/1/20':'11/1/20')%>%
+  pivot_longer(!c(UID, FIPS, Admin2), names_to="date", values_to="cases")%>%
+  filter(FIPS==6075) %>% 
+  mutate(date=as.Date(date, "%m/%d/%y"))%>%
   mutate(cases2=rollmean(cases, k=7, align="center",na.pad=T)) %>% 
   mutate(cases2=cases2-lag(cases2)) %>% 
   ggplot(aes(x=date, y=cases2)) + 
   geom_line()+
   ylim(0,500)+
-  scale_x_date(breaks="1 month", date_labels = "%b") +
+  scale_x_date(breaks="1 month", date_labels = "%b", limits=as.Date(c('2020-03-01', '2020-11-01'))) +
   annotate("segment", x=ymd("2020-08-31"), xend=ymd("2020-08-31"),
-           yend=75, y=440, arrow=arrow(), size=2)+
+           yend=75, y=300, arrow=arrow(), size=2)+
   annotate("segment", x=ymd("2020-09-30"), xend=ymd("2020-09-30"),
-           yend=75, y=480, arrow=arrow(), size=2, color="red")+
-  annotate("text", label="SF allowed to Reopen", x=ymd("2020-08-30"), y=440,
-           color="black", size=4,hjust=0.5, vjust=-0.1)+
-  annotate("text", label="SF Reopens", x=ymd("2020-09-30"), y=480,
-           color="black", size=4,hjust=0.5, vjust=-0.1)+
+           yend=65, y=350, arrow=arrow(), size=2, color="red")+
+  annotate("text", label="SF allowed to Reopen", x=ymd("2020-08-30"), y=320,
+           color="black", size=3.5,hjust=0.5, vjust=-0.1)+
+  annotate("text", label="SF Reopens", x=ymd("2020-09-30"), y=360,
+           color="black", size=3.5,hjust=0.5, vjust=-0.1)+
   labs(title = "Rolling 7-day averages of new COVID cases", 
        y = "New Cases",
        x = "Date") +
-  theme_bw()
+  theme_bw()+theme(plot.title = element_text(size=10)) 
 SanFrancisco       
 
 #Milwaukee
-Milwaukee<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv") %>% 
-  filter(fips==32003) %>% 
-  mutate(date=ymd(date)) %>% 
+
+Milwaukee<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv") %>% 
+  dplyr::select(UID, FIPS, Admin2,'3/1/20':'11/1/20')%>%
+  pivot_longer(!c(UID, FIPS, Admin2), names_to="date", values_to="cases")%>%
+  filter(FIPS==32003) %>% 
+  mutate(date=as.Date(date, "%m/%d/%y"))%>%
   mutate(cases2=rollmean(cases, k=7, align="center",na.pad=T)) %>% 
   mutate(cases2=cases2-lag(cases2)) %>% 
   ggplot(aes(x=date, y=cases2)) + 
   geom_line()+
-  ylim(0,500)+
-  scale_x_date(breaks="1 month", date_labels = "%b") +
+  ylim(0,1250)+
+  scale_x_date(breaks="1 month", date_labels = "%b", limits=as.Date(c('2020-03-01', '2020-10-01'))) +
   annotate("segment", x=ymd("2020-05-14"), xend=ymd("2020-05-14"),
            yend=130, y=440, arrow=arrow(), size=2)+
   annotate("segment", x=ymd("2020-06-05"), xend=ymd("2020-06-05"),
-           yend=150, y=480, arrow=arrow(), size=2, color="red")+
-  annotate("text", label="NV reopens", x=ymd("2020-05-14"), y=440,
-           color="black", size=4,hjust=0.5, vjust=-0.1)+
-  annotate("text", label="Las Vegas Reopens", x=ymd("2020-06-05"), y=480,
-           color="black", size=4,hjust=0.5, vjust=-0.1)+
+           yend=150, y=520, arrow=arrow(), size=2, color="red")+
+  annotate("text", label="Milwaukee allowed to Reopen", x=ymd("2020-05-14"), y=440,
+           color="black", size=3.5,hjust=0.5, vjust=-0.1)+
+  annotate("text", label="Milwaukee Reopens", x=ymd("2020-06-05"), y=525,
+           color="black", size=3.5,hjust=0.5, vjust=-0.1)+
   labs(title = "Rolling 7-day averages of new COVID cases", 
        y = "New Cases",
        x = "Date") +
   theme_bw()
 
 Milwaukee
+
 ##### CONTROLS 
 ###PHEONIX
-
-#may want to limit to 500, to make the same size as others 
-phoenix<-
-  fread("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv") %>% 
-  filter(fips==4013) %>% 
-  mutate(date=ymd(date)) %>% 
-  mutate(cases2=rollmean(cases, k=7, align="center",na.pad=T)) %>% 
+Phoenix<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv") %>% 
+  dplyr::select(UID, FIPS, Admin2,'3/1/20':'11/1/20')%>%
+  pivot_longer(!c(UID, FIPS, Admin2), names_to="date", values_to="cases")%>%
+  filter(FIPS==4013) %>% 
+  mutate(date=as.Date(date, "%m/%d/%y"))%>%
+ mutate(cases2=rollmean(cases, k=7, align="center",na.pad=T)) %>% 
   mutate(cases2=cases2-lag(cases2)) %>% 
   ggplot(aes(x=date, y=cases2)) + 
   geom_line()+
   ylim(0,3000)+
-  scale_x_date(breaks="1 month", date_labels = "%b") +
+  scale_x_date(breaks="1 month", date_labels = "%b", limits=as.Date(c('2020-03-01', '2020-10-01'))) +
   annotate("segment", x=ymd("2020-05-11"), xend=ymd("2020-05-11"),
-           yend=150, y=2000, arrow=arrow(), size=2)+
+           yend=230, y=2000, arrow=arrow(), size=2)+
   annotate("text", label="Arizona & Pheonix Reopens", x=ymd("2020-05-11"), y=2000,
            color="black", size=4,hjust=0.5, vjust=-0.1)+
   labs(title = "Rolling 7-day averages of new COVID cases", 
        y = "New Cases",
        x = "Date") +
   theme_bw()
-phoenix
+Phoenix
 
 #AUSTIN
-austin<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv") %>% 
-  filter(fips==48453) %>% 
-  mutate(date=ymd(date)) %>% 
+
+Austin<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv") %>% 
+  dplyr::select(UID, FIPS, Admin2,'3/1/20':'11/1/20')%>%
+  pivot_longer(!c(UID, FIPS, Admin2), names_to="date", values_to="cases")%>%
+  filter(FIPS==48453) %>% 
+  mutate(date=as.Date(date, "%m/%d/%y"))%>%
   mutate(cases2=rollmean(cases, k=7, align="center",na.pad=T)) %>% 
   mutate(cases2=cases2-lag(cases2)) %>% 
   ggplot(aes(x=date, y=cases2)) + 
   geom_line()+
   ylim(0,600)+
-  scale_x_date(breaks="1 month", date_labels = "%b") +
+  scale_x_date(breaks="1 month", date_labels = "%b", limits=as.Date(c('2020-03-01', '2020-10-01'))) +
   annotate("segment", x=ymd("2020-05-01"), xend=ymd("2020-05-01"),
            yend=150, y=480, arrow=arrow(), size=2)+
   annotate("text", label="Austin & TX Reopen", x=ymd("2020-05-01"), y=480,
@@ -168,17 +184,20 @@ austin<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us
        y = "New Cases",
        x = "Date") +
   theme_bw()
-austin
+Austin
+
 #DALLAS
-dallas<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv") %>% 
-  filter(fips==48113) %>% 
-  mutate(date=ymd(date)) %>% 
+Dallas<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv") %>% 
+  dplyr::select(UID, FIPS, Admin2,'3/1/20':'11/1/20')%>%
+  pivot_longer(!c(UID, FIPS, Admin2), names_to="date", values_to="cases")%>%
+  filter(FIPS==48113) %>% 
+  mutate(date=as.Date(date, "%m/%d/%y"))%>%
   mutate(cases2=rollmean(cases, k=7, align="center",na.pad=T)) %>% 
   mutate(cases2=cases2-lag(cases2)) %>% 
   ggplot(aes(x=date, y=cases2)) + 
   geom_line()+
   ylim(0,1750)+
-  scale_x_date(breaks="1 month", date_labels = "%b") +
+  scale_x_date(breaks="1 month", date_labels = "%b", limits=as.Date(c('2020-03-01', '2020-10-01'))) +
   annotate("segment", x=ymd("2020-05-01"), xend=ymd("2020-05-01"),
            yend=200, y=1500, arrow=arrow(), size=2)+
   annotate("text", label="Dallas & TX Reopen", x=ymd("2020-05-01"), y=1500,
@@ -187,17 +206,20 @@ dallas<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us
        y = "New Cases",
        x = "Date") +
   theme_bw()
-dallas
+Dallas
 #San Antonio
-sanantonio<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv") %>% 
-  filter(fips==48029) %>% 
-  mutate(date=ymd(date)) %>% 
+
+SanAntonio<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv") %>% 
+  dplyr::select(UID, FIPS, Admin2,'3/1/20':'11/1/20')%>%
+  pivot_longer(!c(UID, FIPS, Admin2), names_to="date", values_to="cases")%>%
+  filter(FIPS==48029) %>% 
+  mutate(date=as.Date(date, "%m/%d/%y"))%>%
   mutate(cases2=rollmean(cases, k=7, align="center",na.pad=T)) %>% 
   mutate(cases2=cases2-lag(cases2)) %>% 
   ggplot(aes(x=date, y=cases2)) + 
   geom_line()+
-  ylim(0,1750)+
-  scale_x_date(breaks="1 month", date_labels = "%b") +
+  ylim(0,2000)+
+  scale_x_date(breaks="1 month", date_labels = "%b", limits=as.Date(c('2020-03-01', '2020-10-01'))) +
   annotate("segment", x=ymd("2020-05-01"), xend=ymd("2020-05-01"),
            yend=150, y=1500, arrow=arrow(), size=2)+
   annotate("text", label="San Antonio & TX Reopen", x=ymd("2020-05-01"), y=1500,
@@ -206,17 +228,20 @@ sanantonio<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/maste
        y = "New Cases",
        x = "Date") +
   theme_bw()
-sanantonio
+SanAntonio
+
 #Houston
-houston<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv") %>% 
-  filter(fips==48201) %>% 
-  mutate(date=ymd(date)) %>% 
+Houston<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv") %>% 
+  dplyr::select(UID, FIPS, Admin2,'3/1/20':'11/1/20')%>%
+  pivot_longer(!c(UID, FIPS, Admin2), names_to="date", values_to="cases")%>%
+  filter(FIPS==48201) %>% 
+  mutate(date=as.Date(date, "%m/%d/%y"))%>%
   mutate(cases2=rollmean(cases, k=7, align="center",na.pad=T)) %>% 
   mutate(cases2=cases2-lag(cases2)) %>% 
   ggplot(aes(x=date, y=cases2)) + 
   geom_line()+
-  ylim(0,1750)+
-  scale_x_date(breaks="1 month", date_labels = "%b") +
+  ylim(0,2000)+
+  scale_x_date(breaks="1 month", date_labels = "%b", limits=as.Date(c('2020-03-01', '2020-10-01'))) +
   annotate("segment", x=ymd("2020-05-01"), xend=ymd("2020-05-01"),
            yend=200, y=1500, arrow=arrow(), size=2)+
   annotate("text", label="Houston & TX Reopen", x=ymd("2020-05-01"), y=1500,
@@ -225,62 +250,67 @@ houston<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/master/u
        y = "New Cases",
        x = "Date") +
   theme_bw()
-houston
+Houston
+  
 #ATLANTA
-atlanta<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv") %>% 
-  filter(fips==13121) %>% 
-  mutate(date=ymd(date)) %>% 
+Atlanta<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv") %>% 
+  dplyr::select(UID, FIPS, Admin2,'3/1/20':'11/1/20')%>%
+  pivot_longer(!c(UID, FIPS, Admin2), names_to="date", values_to="cases")%>%
+  filter(FIPS==13121) %>% 
+  mutate(date=as.Date(date, "%m/%d/%y"))%>%
   mutate(cases2=rollmean(cases, k=7, align="center",na.pad=T)) %>% 
   mutate(cases2=cases2-lag(cases2)) %>% 
   ggplot(aes(x=date, y=cases2)) + 
   geom_line()+
   ylim(0,500)+
-  scale_x_date(breaks="1 month", date_labels = "%b") +
+  scale_x_date(breaks="1 month", date_labels = "%b", limits=as.Date(c('2020-03-01', '2020-10-01'))) +
   annotate("segment", x=ymd("2020-04-27"), xend=ymd("2020-04-27"),
            yend=110, y=400, arrow=arrow(), size=2)+
-  annotate("segment", x=ymd("2020-06-16"), xend=ymd("2020-06-16"),
-           yend=110, y=450, arrow=arrow(), size=2, color="blue")+
+#  annotate("segment", x=ymd("2020-06-16"), xend=ymd("2020-06-16"),
+#           yend=110, y=450, arrow=arrow(), size=2, color="blue")+
   annotate("text", label="Atlanta & Georgia Reopen", x=ymd("2020-04-27"), y=400,
-           color="black", size=4,hjust=0.5, vjust=-0.1)+
-  annotate("text", label="All dining restrictions removed", x=ymd("2020-6-16"), y=450,
-           color="black", size=4,hjust=0.5, vjust=-0.1)+
+           color="black", size=3.5,hjust=0.5, vjust=-0.1)+
+#  annotate("text", label="All dining restrictions removed", x=ymd("2020-6-16"), y=450,
+#           color="black", size=4,hjust=0.5, vjust=-0.1)+
   labs(title = "Rolling 7-day averages of new COVID cases", 
        y = "New Cases",
        x = "Date") +
   theme_bw()
-atlanta
+Atlanta
 #CHARLESTON
-charleston<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv") %>% 
-  filter(fips==45019) %>% 
-  mutate(date=ymd(date)) %>% 
+Charleston<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv") %>% 
+  dplyr::select(UID, FIPS, Admin2,'3/1/20':'11/1/20')%>%
+  pivot_longer(!c(UID, FIPS, Admin2), names_to="date", values_to="cases")%>%
+  filter(FIPS==13121) %>% 
+  mutate(date=as.Date(date, "%m/%d/%y"))%>%
   mutate(cases2=rollmean(cases, k=7, align="center",na.pad=T)) %>% 
   mutate(cases2=cases2-lag(cases2)) %>% 
   ggplot(aes(x=date, y=cases2)) + 
   geom_line()+
   ylim(0,500)+
-  scale_x_date(breaks="1 month", date_labels = "%b") +
+  scale_x_date(breaks="1 month", date_labels = "%b", limits=as.Date(c('2020-03-01', '2020-10-01'))) +
   annotate("segment", x=ymd("2020-04-27"), xend=ymd("2020-05-11"),
-           yend=50, y=400, arrow=arrow(), size=2)+
-  annotate("text", label="Charleston and SC Reopen", x=ymd("2020-05-11"), y=400,
+           yend=50, y=410, arrow=arrow(), size=2)+
+  annotate("text", label="Charleston and SC Reopen", x=ymd("2020-05-11"), y=410,
            color="black", size=4,hjust=0.5, vjust=-0.1)+
   labs(title = "Rolling 7-day averages of new COVID cases", 
        y = "New Cases",
        x = "Date") +
   theme_bw()
-charleston
+Charleston
 
 #print all to PDF
-multi.page <- ggarrange(philly,
-                        indianapolis, 
-                        portland, 
-                        lasvegas, 
-                        sanantonio, 
-                        dallas,
-                        houston, 
-                        austin,
-                        phoenix,
-                        atlanta,
-                        charleston,
+multi.page <- ggarrange(Philly,
+                        Indianapolis, 
+                        SanFrancisco,
+                        Milwaukee,
+                        Sanantonio, 
+                        Dallas,
+                        Houston, 
+                        Austin,
+                        Phoenix,
+                        Atlanta,
+                        Charleston,
                         nrow = 2, ncol = 2)
 multi.page[[1]]
 ggexport(multi.page, filename = "figure_1.pdf")
