@@ -146,7 +146,7 @@ p<- ggplot(data=county_cases2, aes(x = time, y = daily_count)) +
                y = "New Cases",
                x = "Date")  +
           theme_bw()
-        
+      
         philly
         #Mineapolis
         
@@ -173,9 +173,9 @@ p<- ggplot(data=county_cases2, aes(x = time, y = daily_count)) +
           theme_bw()
         indianapolis
         
-        #PORTLAND
-        portland<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv") %>% 
-          filter(fips==41051) %>% 
+        #San Francisco
+        SanFrancisco<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv") %>% 
+          filter(fips==6075) %>% 
           mutate(date=ymd(date)) %>% 
           mutate(cases2=rollmean(cases, k=7, align="center",na.pad=T)) %>% 
           mutate(cases2=cases2-lag(cases2)) %>% 
@@ -183,21 +183,22 @@ p<- ggplot(data=county_cases2, aes(x = time, y = daily_count)) +
           geom_line()+
           ylim(0,500)+
           scale_x_date(breaks="1 month", date_labels = "%b") +
-          annotate("segment", x=ymd("2020-05-15"), xend=ymd("2020-05-15"),
+          annotate("segment", x=ymd("2020-08-31"), xend=ymd("2020-08-31"),
                    yend=75, y=440, arrow=arrow(), size=2)+
-          annotate("segment", x=ymd("2020-06-19"), xend=ymd("2020-06-19"),
+          annotate("segment", x=ymd("2020-09-30"), xend=ymd("2020-09-30"),
                    yend=75, y=480, arrow=arrow(), size=2, color="red")+
-          annotate("text", label="OR Reopens", x=ymd("2020-05-15"), y=440,
+          annotate("text", label="SF allowed to Reopen", x=ymd("2020-08-30"), y=440,
                    color="black", size=4,hjust=0.5, vjust=-0.1)+
-          annotate("text", label="Portland Reopens", x=ymd("2020-06-19"), y=480,
+          annotate("text", label="SF Reopens", x=ymd("2020-09-30"), y=480,
                    color="black", size=4,hjust=0.5, vjust=-0.1)+
           labs(title = "Rolling 7-day averages of new COVID cases", 
                y = "New Cases",
                x = "Date") +
           theme_bw()
-        portland
-        #Las Vegas
-        lasvegas<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv") %>% 
+SanFrancisco       
+
+#Milwaukee
+        Milwaukee<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv") %>% 
           filter(fips==32003) %>% 
           mutate(date=ymd(date)) %>% 
           mutate(cases2=rollmean(cases, k=7, align="center",na.pad=T)) %>% 
@@ -206,20 +207,20 @@ p<- ggplot(data=county_cases2, aes(x = time, y = daily_count)) +
           geom_line()+
           ylim(0,500)+
           scale_x_date(breaks="1 month", date_labels = "%b") +
-          annotate("segment", x=ymd("2020-05-09"), xend=ymd("2020-05-09"),
+          annotate("segment", x=ymd("2020-05-14"), xend=ymd("2020-05-14"),
                    yend=130, y=440, arrow=arrow(), size=2)+
-          annotate("segment", x=ymd("2020-06-04"), xend=ymd("2020-06-04"),
+          annotate("segment", x=ymd("2020-06-05"), xend=ymd("2020-06-05"),
                    yend=150, y=480, arrow=arrow(), size=2, color="red")+
-          annotate("text", label="NV reopens", x=ymd("2020-05-09"), y=440,
+          annotate("text", label="NV reopens", x=ymd("2020-05-14"), y=440,
                    color="black", size=4,hjust=0.5, vjust=-0.1)+
-          annotate("text", label="Las Vegas Reopens", x=ymd("2020-06-04"), y=480,
+          annotate("text", label="Las Vegas Reopens", x=ymd("2020-06-05"), y=480,
                    color="black", size=4,hjust=0.5, vjust=-0.1)+
           labs(title = "Rolling 7-day averages of new COVID cases", 
                y = "New Cases",
                x = "Date") +
           theme_bw()
         
-        lasvegas
+        Milwaukee
         ##### CONTROLS 
         ###PHEONIX
         

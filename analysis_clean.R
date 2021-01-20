@@ -78,9 +78,9 @@ indianapolis<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/mas
   theme_bw() + theme(plot.title = element_text(size=12))
 indianapolis
 
-#PORTLAND
-portland<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv") %>% 
-  filter(fips==41051) %>% 
+#San Francisco
+SanFrancisco<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv") %>% 
+  filter(fips==6075) %>% 
   mutate(date=ymd(date)) %>% 
   mutate(cases2=rollmean(cases, k=7, align="center",na.pad=T)) %>% 
   mutate(cases2=cases2-lag(cases2)) %>% 
@@ -88,21 +88,22 @@ portland<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/master/
   geom_line()+
   ylim(0,500)+
   scale_x_date(breaks="1 month", date_labels = "%b") +
-  annotate("segment", x=ymd("2020-05-15"), xend=ymd("2020-05-15"),
+  annotate("segment", x=ymd("2020-08-31"), xend=ymd("2020-08-31"),
            yend=75, y=440, arrow=arrow(), size=2)+
-  annotate("segment", x=ymd("2020-06-19"), xend=ymd("2020-06-19"),
+  annotate("segment", x=ymd("2020-09-30"), xend=ymd("2020-09-30"),
            yend=75, y=480, arrow=arrow(), size=2, color="red")+
-  annotate("text", label="OR Reopens", x=ymd("2020-05-15"), y=440,
+  annotate("text", label="SF allowed to Reopen", x=ymd("2020-08-30"), y=440,
            color="black", size=4,hjust=0.5, vjust=-0.1)+
-  annotate("text", label="Portland Reopens", x=ymd("2020-06-19"), y=480,
+  annotate("text", label="SF Reopens", x=ymd("2020-09-30"), y=480,
            color="black", size=4,hjust=0.5, vjust=-0.1)+
   labs(title = "Rolling 7-day averages of new COVID cases", 
        y = "New Cases",
        x = "Date") +
   theme_bw()
-portland
-#Las Vegas
-lasvegas<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv") %>% 
+SanFrancisco       
+
+#Milwaukee
+Milwaukee<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv") %>% 
   filter(fips==32003) %>% 
   mutate(date=ymd(date)) %>% 
   mutate(cases2=rollmean(cases, k=7, align="center",na.pad=T)) %>% 
@@ -111,20 +112,20 @@ lasvegas<-fread("https://raw.githubusercontent.com/nytimes/covid-19-data/master/
   geom_line()+
   ylim(0,500)+
   scale_x_date(breaks="1 month", date_labels = "%b") +
-  annotate("segment", x=ymd("2020-05-09"), xend=ymd("2020-05-09"),
+  annotate("segment", x=ymd("2020-05-14"), xend=ymd("2020-05-14"),
            yend=130, y=440, arrow=arrow(), size=2)+
-  annotate("segment", x=ymd("2020-06-04"), xend=ymd("2020-06-04"),
+  annotate("segment", x=ymd("2020-06-05"), xend=ymd("2020-06-05"),
            yend=150, y=480, arrow=arrow(), size=2, color="red")+
-  annotate("text", label="NV reopens", x=ymd("2020-05-09"), y=440,
+  annotate("text", label="NV reopens", x=ymd("2020-05-14"), y=440,
            color="black", size=4,hjust=0.5, vjust=-0.1)+
-  annotate("text", label="Las Vegas Reopens", x=ymd("2020-06-04"), y=480,
+  annotate("text", label="Las Vegas Reopens", x=ymd("2020-06-05"), y=480,
            color="black", size=4,hjust=0.5, vjust=-0.1)+
   labs(title = "Rolling 7-day averages of new COVID cases", 
        y = "New Cases",
        x = "Date") +
   theme_bw()
 
-lasvegas
+Milwaukee
 ##### CONTROLS 
 ###PHEONIX
 
@@ -469,6 +470,26 @@ rse_mod_s2b2<-exp(coeftest(mod_s2b2, vcov = vcovHC,  cluster= ~cities))
 rci_mod_s2b2<-exp(coefci(mod_s2b2, vcov = vcovHC,  cluster= ~cities))
 exp(-0.88385)
 
+install.packages("margins")
+library(margins)
+summary(mod_s2b2<-glm.nb(daily_count~ treat1*pre_post + at_home + mask_mandate + evict_ban,  data=county_cases2b))
+
+county_cases2b<-county_cases2b%>%
+  mutate(treat=as.numeric(treat1))
+summary(mod_s2b2<-glm.nb(daily_count~ treat*pre_post + at_home + mask_mandate + evict_ban,  data=county_cases2b))
+
+summary(margins(mod_s2b2, variables="treat1"))
+margins(mod_s2b2, at = list(pre_post = 0:1))
+margins(mod_s2b2, at = list(treat1 = 0:1))
+margins(mod_s2b2, at = list(pre_post = 0:1, treat=0:1))
+
+levels(county_cases2b$pre_post)
+
+post<-data.frame(pre_post=1,
+                 treat1=factor(0:1, levels=)
+
+ predict(mod_s2b2,  interval="confidence")
+
 #**********************************
 ###Sensitivity 3: increase lag to 3 weeks (21 days)
 summary(mod_s2c1<-glm.nb(daily_deaths~treat1*pre_post + offset(log(pop/100000)), data=county_cases2c))
@@ -744,6 +765,13 @@ stargazer(event_models_d, apply.coef=exp, type="text", title="IRRs event model d
 
 
 #estimate marginal effects 
+#use predict and then divide by offset *100,000 
+#create new dataset w/ expected counts for treatment v controls, w/ 
+
+s1 <- data.frame(math = mean(p$math),
+                 prog = factor(1:3, levels = 1:3, labels = levels(p$prog))))
+
+
 #can't use margins bc of the offset. 
 negbinmfx(formula, data, atmean = TRUE, robust = FALSE, clustervar1 = NULL, 
           clustervar2 = NULL, start = NULL, control = glm.control())
