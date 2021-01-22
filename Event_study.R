@@ -1,6 +1,6 @@
 # Event MODEL 
 
-
+rm(list=ls())
 #Import all libraries 
 library(data.table)
 library(tidyverse)
