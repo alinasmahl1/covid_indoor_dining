@@ -44,12 +44,12 @@ Philly<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/
   ylim(0,600)+
   scale_x_date(breaks="1 month", date_labels = "%b", limits=as.Date(c('2020-03-01', '2020-10-01'))) +
   annotate("segment", x=ymd("2020-06-26"), xend=ymd("2020-06-26"),
-           yend=150, y=380, arrow=arrow(), size=2)+
+           yend=150, y=450, arrow=arrow(), size=2)+
   annotate("segment", x=ymd("2020-09-08"), xend=ymd("2020-09-08"),
-           yend=150, y=460, arrow=arrow(), size=2, color="red")+
-  annotate("text", label="Philadelphia allowed to reopen", x=ymd("2020-07-03"), y=381,
+           yend=150, y=550, arrow=arrow(), size=2, color="red")+
+  annotate("text", label="Philadelphia Can Reopen", x=ymd("2020-07-03"), y=460,
            color="black", size=3.5,hjust=0.5, vjust=-0.1)+
-  annotate("text", label="Philadelphia Reopens", x=ymd("2020-09-08"), y=460,
+  annotate("text", label="Philadelphia Reopens", x=ymd("2020-09-08"), y=560,
            color="black", size=3.5,hjust=0.5, vjust=-0.1)+
   labs(title = "Rolling 7-day averages of new COVID cases", 
        y = "New Cases",
@@ -75,7 +75,7 @@ Indianapolis<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/m
            yend=150, y=440, arrow=arrow(), size=2)+
   annotate("segment", x=ymd("2020-06-01"), xend=ymd("2020-06-01"),
            yend=120, y=480, arrow=arrow(), size=2, color="red")+
-  annotate("text", label="Indianapolis allowed to reopen", x=ymd("2020-05-11"), y=440,
+  annotate("text", label="Indianapolis Can Reopen", x=ymd("2020-05-11"), y=440,
            color="black", size=3.5,hjust=0.5, vjust=-0.1)+
   annotate("text", label="Indianapolis Reopens", x=ymd("2020-06-01"), y=480,
            color="black", size=3.5,hjust=0.5, vjust=-0.1)+
@@ -99,12 +99,12 @@ SanFrancisco<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/m
   ylim(0,500)+
   scale_x_date(breaks="1 month", date_labels = "%b", limits=as.Date(c('2020-03-01', '2020-11-01'))) +
   annotate("segment", x=ymd("2020-08-31"), xend=ymd("2020-08-31"),
-           yend=75, y=300, arrow=arrow(), size=2)+
+           yend=75, y=425, arrow=arrow(), size=2)+
   annotate("segment", x=ymd("2020-09-30"), xend=ymd("2020-09-30"),
-           yend=65, y=350, arrow=arrow(), size=2, color="red")+
-  annotate("text", label="SF allowed to Reopen", x=ymd("2020-08-30"), y=320,
+           yend=65, y=450, arrow=arrow(), size=2, color="red")+
+  annotate("text", label="SF allowed to Reopen", x=ymd("2020-08-30"), y=435,
            color="black", size=3.5,hjust=0.5, vjust=-0.1)+
-  annotate("text", label="SF Reopens", x=ymd("2020-09-30"), y=360,
+  annotate("text", label="SF Reopens", x=ymd("2020-09-30"), y=460,
            color="black", size=3.5,hjust=0.5, vjust=-0.1)+
   labs(title = "Rolling 7-day averages of new COVID cases", 
        y = "New Cases",
@@ -126,12 +126,12 @@ Milwaukee<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/mast
   ylim(0,1250)+
   scale_x_date(breaks="1 month", date_labels = "%b", limits=as.Date(c('2020-03-01', '2020-10-01'))) +
   annotate("segment", x=ymd("2020-05-14"), xend=ymd("2020-05-14"),
-           yend=130, y=440, arrow=arrow(), size=2)+
+           yend=130, y=900, arrow=arrow(), size=2)+
   annotate("segment", x=ymd("2020-06-05"), xend=ymd("2020-06-05"),
-           yend=150, y=520, arrow=arrow(), size=2, color="red")+
-  annotate("text", label="Milwaukee allowed to Reopen", x=ymd("2020-05-14"), y=440,
+           yend=150, y=850, arrow=arrow(), size=2, color="red")+
+  annotate("text", label="Milwaukee Can Reopen", x=ymd("2020-05-14"), y=910,
            color="black", size=3.5,hjust=0.5, vjust=-0.1)+
-  annotate("text", label="Milwaukee Reopens", x=ymd("2020-06-05"), y=525,
+  annotate("text", label="Milwaukee Reopens", x=ymd("2020-06-05"), y=860,
            color="black", size=3.5,hjust=0.5, vjust=-0.1)+
   labs(title = "Rolling 7-day averages of new COVID cases", 
        y = "New Cases",
@@ -304,7 +304,7 @@ multi.page <- ggarrange(Philly,
                         Indianapolis, 
                         SanFrancisco,
                         Milwaukee,
-                        Sanantonio, 
+                        SanAntonio, 
                         Dallas,
                         Houston, 
                         Austin,
@@ -328,6 +328,8 @@ means <- roll_avg %>%
             logcasemean=log(casemean))
 means
 
+
+pdf(file="results/figure_2.pdf")
 rate_mean1 <- ggplot(roll_avg, aes(x = time, y = caserate_07da, group =treat1)) +
   geom_line(data=means, aes(x=time, y=ratemean, color=factor(treat1, labels = c("Control", "Treatment"))))+
   geom_vline(xintercept = 14)+
@@ -335,10 +337,11 @@ rate_mean1 <- ggplot(roll_avg, aes(x = time, y = caserate_07da, group =treat1)) 
        color="Treat v Control",
        y = "New case rate per 100,000",
        x = "Days Since Delayed Reopening ") +
-  stat_smooth(method="loess", se=FALSE, color="black" , aes=(color=as.factor(cities))) +
-  coord_cartesian(ylim = c(0, 15))
+  stat_smooth(method="loess", se=FALSE, color="black" ,aes(weight=pop, color=as.factor(cities))) +
+coord_cartesian(ylim = c(0, 30))
 
 rate_mean1
+dev.off()
 
 #final figure for deaths 
 means_death <- roll_avg_death %>% 
@@ -347,18 +350,22 @@ means_death <- roll_avg_death %>%
             mean7da = mean(deaths_07da), 
             ratemean=mean(deathrate_07da))
 
-rate_mean1 <- ggplot(roll_avg_death, aes(x = time, y = deathrate_07da, group =treat1)) +
+pdf(file="results/figure_2b.pdf")
+rate_mean1_death <- ggplot(roll_avg_death, aes(x = time, y = deathrate_07da, group =treat1)) +
   geom_line(data=means_death, aes(x=time, y=ratemean, color=factor(treat1, labels = c("Control", "Treatment"))))+
   geom_vline(xintercept = 35)+
   labs(title = " Rolling 7 day average rate new COVID cases", 
        color="Treat v Control",
        y = "New death rate per 100,000",
        x = "Days Since Delayed Reopening ") +
-  stat_smooth(method="loess", se=FALSE, color="black" , aes=(color=as.factor(cities))) +
+  stat_smooth(method="loess", se=FALSE, color="black" , aes((weight=pop), color=as.factor(cities))) +
 coord_cartesian(ylim = c(0, 1)) +coord_cartesian(xlim = c(0, 62))
 
-rate_mean1
+rate_mean1_death
 
+dev.off()
+
+#just to view by city w/o mean-- not for final figure 
 avg7da_death<- ggplot() +
   geom_line(data=roll_avg_death, aes(x=time, y=deathrate_07da , colour=cities)) +
   geom_line(data=means_death, aes(x=time, y=ratemean))+
@@ -406,22 +413,23 @@ rci_mod_nb1off<-exp(coefci(mod_nb1off, vcov = vcovHC,  cluster= ~cities))
 #add treat 
 summary(mod_nb2off<-glm.nb(daily_count~pre_post +treat1+ offset(log(pop/100000)), data=county_cases2))
 stargazer(mod_nb2off, apply.coef = exp, type='text')
-rse_nb2off<-exp(coeftest(mod_nb2off, vcov = vcovHC,  cluster= ~cities))
-rci_nb2off<-exp(coefci(mod_nb2off, vcov = vcovHC,  cluster= ~cities))
+rse_mod_nb2off<-exp(coeftest(mod_nb2off, vcov = vcovHC,  cluster= ~cities))
+rci__mod_nb2off<-exp(coefci(mod_nb2off, vcov = vcovHC,  cluster= ~cities))
 #add interaction 
 summary(mod_nb3<-glm.nb(daily_count~treat1*pre_post + offset(log(pop/100000)), data=county_cases2))
 stargazer(mod_nb3, apply.coef = exp, type='text')
 rse_mod_nb3<-exp(coeftest(mod_nb3, vcov = vcovHC,  cluster= ~cities))
 rci_mod_nb3<-exp(coefci(mod_nb3, vcov = vcovHC,  cluster= ~cities))
-
+rci_mod_nb3
 ########add other policies########
 #stay at home order
 summary(mod_nb3a<-glm.nb(daily_count~treat1*pre_post + at_home + offset(log(pop/100000)), data=county_cases2))
 stargazer(mod_nb3a, apply.coef = exp, type='text')
 anova(mod_nb3, mod_nb3a,  test="Chisq")
 rse_mod_nb3a<-exp(coeftest(mod_nb3a, vcov = vcovHC,  cluster= ~cities))
+rse_mod_nb3a
 rci_mod_nb3a<-exp(coefci(mod_nb3a, vcov = vcovHC,  cluster= ~cities))
-
+rci_mod_nb3a
 summary(county_cases2$date)
 #mask mandate
 summary(mod_nb3b<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + offset(log(pop/100000)), data=county_cases2))
@@ -429,6 +437,7 @@ stargazer(mod_nb3b, apply.coef = exp, type='text')
 anova(mod_nb3a, mod_nb3b,  test="Chisq")
 rse_mod_nb3b<-exp(coeftest(mod_nb3b, vcov = vcovHC,  cluster= ~cities))
 rci_mod_nb3b<-exp(coefci(mod_nb3b, vcov = vcovHC,  cluster= ~cities))
+rci_mod_nb3b
 #eviction ban 
 summary(mod_nb3c<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_end + offset(log(pop/100000)),  data=county_cases2))
 stargazer(mod_nb3c, apply.coef = exp, type='text')
@@ -436,19 +445,58 @@ anova(mod_nb3b, mod_nb3c,  test="Chisq")
 rse_mod_nb3c<-exp(coeftest(mod_nb3c, vcov = vcovHC,  cluster= ~cities))
 rci_mod_nb3c<-exp(coefci(mod_nb3c, vcov = vcovHC,  cluster= ~cities))
 rci_mod_nb3c
-
+rse_mod_nb3c
 #compare models 
 models <- list(mod_nb1, mod_nb1off, mod_nb2off, mod_nb3)
 models1<-list(mod_nb3a, mod_nb3b, mod_nb3c)
 
+#this doesn't really work- fix it!
 robust_se_1<-list(rse_mod_nb1, rse_mod_nb1off, rse_mod_nb2off, rse_mod_nb3)
 robust_se_2<-list(rse_mod_nb3a, rse_mod_nb3b, rse_mod_nb3c)
-robust_ci_1<-list(rci_mod_nb1, rci_mod_nb1off, rci_mod_nb2off, rci_mod_nb3)
+robust_ci_1<-list(rci_mod_nb1, rci_mod_nb1off, rci_mod_nb2off, rci_mod_nb2off)
 robust_ci_2<-list(rci_mod_nb3a, rci_mod_nb3b, rci_mod_nb3c)
 
 stargazer(models, apply.coef=exp, type = "text", ci = TRUE, title="Base Models", out="results/table1.txt")
 stargazer(models1, apply.coef=exp, type="text", ci = TRUE, title="Models w/ NPIs", out="results/table1a.txt")
-robust_ci_2
+
+###find marginal means 
+#take final main model 
+summary(mod_nb3c<-glm.nb(daily_count~ treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2))
+
+emm1<-emmeans(mod_nb3c, specs=pairwise~treat1*pre_post, type="response")
+emm1
+emm1$emmeans%>%
+  summary(infer = TRUE)
+
+emm1$contrasts
+emm1$contrasts %>%
+  summary(infer = TRUE)
+#main effects
+emmeans(mod_nb3c, specs = pairwise ~treat1*pre_post, type="response")
+
+#try w/ margins
+summary(test<-glm.nb(daily_count~ treat1*pre_post + at_home + mask_mandate + evict_ban ,  data=county_cases2))
+summary(margins(test,  type="response"))
+
+#include weights
+#It is possible to override the equal-weighting method for 
+#computing EMMs. Using weights = "cells" in the call will weight the predictions 
+#according to their cell frequencies (recall this information is retained in the reference grid).
+#This produces results comparable to ordinary marginal means:
+
+emmeans(mod_nb3c, specs = pairwise ~treat1, type="response")
+#if all had been in the treatment period
+emmeans(mod_nb3c, "pre_post", at = list(treat1 = 1), type="response")
+emmeans(mod_nb3c, specs=pairwise~treat1*pre_post, at = list(treat1 = 1), type="response")
+
+#plot 
+emmip(mod_nb3c, treat1 ~ pre_post, CIs=TRUE, type="response")
+plot(mod_nb3c)
+
+#treat vs control 
+emmeans(mod_nb3c, specs = trt.vs.ctrl ~ treat1:pre_post, type="response")
+
+
 #####################################################################################
 ####code for testing negative vs binomial model. 
 #test poisson vs negative binomial-- for final model
@@ -482,15 +530,14 @@ print(xtable(ic, caption = "Information criteria results",
 summary(mod_s2a1<-glm.nb(daily_count~treat1*pre_post + offset(log(pop/100000)), data=county_cases2a))
 rse_mod_s2a1<-exp(coeftest(mod_s2a1, vcov = vcovHC,  cluster= ~cities))
 rci_mod_s2a1<-exp(coefci(mod_s2a1, vcov = vcovHC,  cluster= ~cities))
-
-summary(mod_s2a2<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_deaths2a))
+rci_mod_s2a1
+summary(mod_s2a2<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2a))
 rse_mod_s2a2<-exp(coeftest(mod_s2a2, vcov = vcovHC,  cluster= ~cities))
 rci_mod_s2a2<-exp(coefci(mod_s2a2, vcov = vcovHC,  cluster= ~cities))
-
+rci_mod_s2a2
 #**********************************
 ###Sensivity 2: 9 day lag
-county_cases2b<-county_cases2b%>%
-  filter(cities!="Las Vegas")
+
 summary(mod_s2b1<-glm.nb(daily_count~treat1*pre_post + offset(log(pop/100000)), data=county_cases2b))
 rse_mod_s2b1<-exp(coeftest(mod_s2b1, vcov = vcovHC,  cluster= ~cities))
 rci_mod_s2b1<-exp(coefci(mod_s2b1, vcov = vcovHC,  cluster= ~cities))
@@ -498,81 +545,72 @@ rci_mod_s2b1<-exp(coefci(mod_s2b1, vcov = vcovHC,  cluster= ~cities))
 summary(mod_s2b2<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2b))
 rse_mod_s2b2<-exp(coeftest(mod_s2b2, vcov = vcovHC,  cluster= ~cities))
 rci_mod_s2b2<-exp(coefci(mod_s2b2, vcov = vcovHC,  cluster= ~cities))
-exp(-0.88385)
-
-install.packages("margins")
-library(margins)
-summary(mod_s2b2<-glm.nb(daily_count~ treat1*pre_post + at_home + mask_mandate + evict_ban,  data=county_cases2b))
-
-county_cases2b<-county_cases2b%>%
-  mutate(treat=as.numeric(treat1))
-summary(mod_s2b2<-glm.nb(daily_count~ treat*pre_post + at_home + mask_mandate + evict_ban,  data=county_cases2b))
-
-summary(margins(mod_s2b2, variables="treat1"))
-margins(mod_s2b2, at = list(pre_post = 0:1))
-margins(mod_s2b2, at = list(treat1 = 0:1))
-margins(mod_s2b2, at = list(pre_post = 0:1, treat=0:1))
-
-levels(county_cases2b$pre_post)
-
-post<-data.frame(pre_post=1,
-                 treat1=factor(0:1, levels=)
-
- predict(mod_s2b2,  interval="confidence")
-
+rci_mod_s2b2
 #**********************************
 ###Sensitivity 3: increase lag to 3 weeks (21 days)
-summary(mod_s2c1<-glm.nb(daily_deaths~treat1*pre_post + offset(log(pop/100000)), data=county_cases2c))
-rse_mod_s2c1<-exp(coeftest(mod_s1c1, vcov = vcovHC,  cluster= ~cities))
-rci_mod_s2c1<-exp(coefci(mod_s1c1, vcov = vcovHC,  cluster= ~cities))
+summary(mod_s2c1<-glm.nb(daily_count~treat1*pre_post + offset(log(pop/100000)), data=county_cases2c))
+rse_mod_s2c1<-exp(coeftest(mod_s2c1, vcov = vcovHC,  cluster= ~cities))
+rci_mod_s2c1<-exp(coefci(mod_s2c1, vcov = vcovHC,  cluster= ~cities))
 
-summary(mod_s2c2<-glm.nb(daily_deaths~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_deaths2c))
-rse_mod_s2c2<-exp(coeftest(mod_s1c2, vcov = vcovHC,  cluster= ~cities))
-rci_mod_s2c2<-exp(coefci(mod_s1c2, vcov = vcovHC,  cluster= ~cities))
-
+summary(mod_s2c2<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2c))
+rse_mod_s2c2<-exp(coeftest(mod_s2c2, vcov = vcovHC,  cluster= ~cities))
+rci_mod_s2c2<-exp(coefci(mod_s2c2, vcov = vcovHC,  cluster= ~cities))
+rci_mod_s2c2
 ###Sensivity 4: increase lag to 4 weeks (28 days)
-summary(mod_s2d1<-glm.nb(daily_deaths~treat1*pre_post + offset(log(pop/100000)), data=county_cases2d))
-rse_mod_s2d1<-exp(coeftest(mod_s1d1, vcov = vcovHC,  cluster= ~cities))
-rci_mod_s2d1<-exp(coefci(mod_s1d1, vcov = vcovHC,  cluster= ~cities))
+summary(mod_s2d1<-glm.nb(daily_count~treat1*pre_post + offset(log(pop/100000)), data=county_cases2d))
+rse_mod_s2d1<-exp(coeftest(mod_s2d1, vcov = vcovHC,  cluster= ~cities))
+rci_mod_s2d1<-exp(coefci(mod_s2d1, vcov = vcovHC,  cluster= ~cities))
 
-summary(mod_s2d2<-glm.nb(daily_deaths~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_deaths2d))
-rse_mod_s2d2<-exp(coeftest(mod_s1d2, vcov = vcovHC,  cluster= ~cities))
-rci_mod_s2d2<-exp(coefci(mod_s1d2, vcov = vcovHC,  cluster= ~cities))
-
+summary(mod_s2d2<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2d))
+rse_mod_s2d2<-exp(coeftest(mod_s2d2, vcov = vcovHC,  cluster= ~cities))
+rci_mod_s2d2<-exp(coefci(mod_s2d2, vcov = vcovHC,  cluster= ~cities))
+rci_mod_s2d2
 #sensitivity 5
 #Increase study period to 12 weeks 
 
-summary(mod_s2d1<-glm.nb(daily_deaths~treat1*pre_post + offset(log(pop/100000)), data=county_cases2e))
-rse_mod_s2e1<-exp(coeftest(mod_s1e1, vcov = vcovHC,  cluster= ~cities))
-rci_mod_s2e1<-exp(coefci(mod_s1e1, vcov = vcovHC,  cluster= ~cities))
+summary(mod_s2e1<-glm.nb(daily_count~treat1*pre_post + offset(log(pop/100000)), data=county_cases2e))
+rse_mod_s2e1<-exp(coeftest(mod_s2e1, vcov = vcovHC,  cluster= ~cities))
+rci_mod_s2e1<-exp(coefci(mod_s2e1, vcov = vcovHC,  cluster= ~cities))
 
-summary(mod_s2e2<-glm.nb(daily_deaths~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_deaths2e))
-rse_mod_s2e2<-exp(coeftest(mod_s1e2, vcov = vcovHC,  cluster= ~cities))
-rci_mod_s2e2<-exp(coefci(mod_s1e2, vcov = vcovHC,  cluster= ~cities))
+summary(mod_s2e2<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2e))
+rse_mod_s2e2<-exp(coeftest(mod_s2e2, vcov = vcovHC,  cluster= ~cities))
+rci_mod_s2e2<-exp(coefci(mod_s2e2, vcov = vcovHC,  cluster= ~cities))
+rci_mod_s2e2
+###remove the non bchc cities 
+summary(mod_s2f1<-glm.nb(daily_count~treat1*pre_post + offset(log(pop/100000)), data=county_cases2f))
+rse_mod_s2f1<-exp(coeftest(mod_s2f1, vcov = vcovHC,  cluster= ~cities))
+rci_mod_s2f1<-exp(coefci(mod_s2f1, vcov = vcovHC,  cluster= ~cities))
 
-#Sensitivity 6: limit to BCHC cities 
-summary(mod_s2f1<-glm.nb(daily_deaths~treat1*pre_post + offset(log(pop/100000)), data=county_cases2f))
-rse_mod_s2f1<-exp(coeftest(mod_s1f1, vcov = vcovHC,  cluster= ~cities))
-rci_mod_s2f1<-exp(coefci(mod_s1f1, vcov = vcovHC,  cluster= ~cities))
-
-summary(mod_s2f2<-glm.nb(daily_deaths~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_deaths2f))
-rse_mod_s2f2<-exp(coeftest(mod_s1f2, vcov = vcovHC,  cluster= ~cities))
-rci_mod_s2f2<-exp(coefci(mod_s1f2, vcov = vcovHC,  cluster= ~cities))
-
-##model output model outpumodel output model output model output model output t 
+summary(mod_s2f2<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2f))
+rse_mod_s2f2<-exp(coeftest(mod_s2f2, vcov = vcovHC,  cluster= ~cities))
+rci_mod_s2f2<-exp(coefci(mod_s2f2, vcov = vcovHC,  cluster= ~cities))
+rci_mod_s2f2
+##model output 
 #changes in lag periods  
-models_sen <- list(mod_s2a1, mod_s2a2, mod_s2b1,mod_s2b2, mod_s2c1,mod_s2c2, mod_s2d1,mod_s2d2)
+#just interaction models
+models_sen <- list(mod_s2a1,  mod_s2b1, mod_s2c1, mod_s2d1)
 robust_se_2<-list(rse_mod_s2a1, rse_mod_s2a2, rse_mod_s2b1, rse_mod_s2b2, rse_mod_s2c1, rse_mod_s2c2, rse_mod_s2d1, rse_mod_s2d2)
 robust_ci_2<-list(rci_mod_s2a1, rci_mod_s2a2, rci_mod_s2b1, rci_mod_s2b2, rci_mod_s2c1, rci_mod_s2c2, rci_mod_s2d1, rci_mod_s2d2)
 
-stargazer(models, apply.coef=exp, type = "text", ci = TRUE, title="Sensitivity_change in lags", out="results/table_1sa_cases.txt")
+#just final models
+models_sen1 <- list(mod_s2a2, mod_s2b2, mod_s2c2, mod_s2d2)
+
+
+stargazer(models_sen, apply.coef=exp, type = "text", ci = TRUE, title="Sensitivity_change in lags", out="results/table_1sa_cases.txt")
+stargazer(models_sen1, apply.coef=exp, type = "text", ci = TRUE, title="Sensitivity_change in lags_full model", out="results/table_1sa2_cases.txt")
+
 #model output additional sensitivity analysis 
 ## BCHC &  
 models_sen2 <- list(mod_s2e1, mod_s2e2, mod_s2f1,mod_s2f2)
 robust_se_2b<-list(rse_mod_s2e1, rse_mod_s2e2, rse_mod_s2f1, rse_mod_s2f2)
 robust_ci_2b<-list(rci_mod_s2e1, rci_mod_s2e2, rci_mod_s2f1, rci_mod_s2f2)
 
-stargazer(models, apply.coef=exp, type = "text", ci = TRUE, title="Sensitivity_period, BCHC", out="results/table_1sb_cases.txt")
+stargazer(models_sen2, apply.coef=exp, type = "text", ci = TRUE, title="Sensitivity_period, BCHC", out="results/table_1sb_cases.txt")
+
+
+#Sensitivity 7: using the re-opening dates of all cities, so no treatment 
+summary(mod_s2f2<-glm.nb(daily_count~pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases_sens1))
+
 
 ####################################################
 # Models for Deaths 
@@ -610,8 +648,9 @@ rci_nb2off<-exp(coefci(mod_nb2off, vcov = vcovHC,  cluster= ~cities))
 summary(mod_nb3<-glm.nb(daily_deaths~treat1*pre_post + offset(log(pop/100000)), data=county_deaths2))
 stargazer(mod_nb3, apply.coef = exp, type='text', ci = TRUE)
 rse_mod_nb3<-exp(coeftest(mod_nb3, vcov = vcovHC,  cluster= ~cities))
+rse_mod_nb3
 rci_mod_nb3<-exp(coefci(mod_nb3, vcov = vcovHC,  cluster= ~cities))
-
+rci_mod_nb3
 ########add other policies########
 #stay at home order
 summary(mod_nb3a<-glm.nb(daily_deaths~treat1*pre_post + at_home + offset(log(pop/100000)), data=county_deaths2))
@@ -619,7 +658,7 @@ stargazer(mod_nb3a, apply.coef = exp, type='text')
 anova(mod_nb3, mod_nb3a,  test="Chisq")
 rse_mod_nb3a<-exp(coeftest(mod_nb3a, vcov = vcovHC,  cluster= ~cities))
 rci_mod_nb3a<-exp(coefci(mod_nb3a, vcov = vcovHC,  cluster= ~cities))
-
+rci_mod_nb3a
 summary(county_cases2$date)
 #mask mandate
 summary(mod_nb3b<-glm.nb(daily_deaths~treat1*pre_post + at_home + mask_mandate + offset(log(pop/100000)), data=county_deaths2))
@@ -627,14 +666,14 @@ stargazer(mod_nb3b, apply.coef = exp, type='text')
 anova(mod_nb3a, mod_nb3b,  test="Chisq")
 rse_mod_nb3b<-exp(coeftest(mod_nb3b, vcov = vcovHC,  cluster= ~cities))
 rci_mod_nb3b<-exp(coefci(mod_nb3b, vcov = vcovHC,  cluster= ~cities))
-
+rci_mod_nb3b
 #eviction ban 
 summary(mod_nb3c<-glm.nb(daily_deaths~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_deaths2))
 stargazer(mod_nb3c, apply.coef = exp, type='text')
 anova(mod_nb3b, mod_nb3c,  test="Chisq")
 rse_mod_nb3c<-exp(coeftest(mod_nb3c, vcov = vcovHC,  cluster= ~cities))
 rci_mod_nb3c<-exp(coefci(mod_nb3c, vcov = vcovHC,  cluster= ~cities))
-
+rci_mod_nb3c
 #compare models 
 modelsdeath <- list(mod_nb1, mod_nb1off, mod_nb2off, mod_nb3)
 modelsdeath1<-list(mod_nb3a, mod_nb3b, mod_nb3c)
@@ -645,7 +684,7 @@ robust_se_death<-list(rse_mod_nb3a, rse_mod_nb3b, rse_mod_nb3c)
 robust_ci_death<-list(rci_mod_nb3a, rci_mod_nb3b, rci_mod_nb3c)
 
 stargazer(modelsdeath, apply.coef=exp, type = "text", title="Base Models", out="results/table1deaths.txt")
-stargazer(modelsdeath1, apply.coef=exp, type="text", title="Models w/ NPIs", out="results/table1adeaths.txt")
+stargazer(modelsdeath1, apply.coef=exp, type="text", title="Models w/ NPIs", out="results/table1bdeaths.txt")
 
 #################################################################################
 #Sensitivity Analysis
@@ -656,25 +695,27 @@ stargazer(modelsdeath1, apply.coef=exp, type="text", title="Models w/ NPIs", out
 summary(mod_ds1b<-glm.nb(daily_deaths~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_deaths2b))
 rse_mod_ds1b<-exp(coeftest(mod_ds1b, vcov = vcovHC,  cluster= ~cities))
 rci_mod_ds1b<-exp(coefci(mod_ds1b, vcov = vcovHC,  cluster= ~cities))
-
+rci_mod_ds1b
 #sensitivity analysis 2: 
 #remove lag for other NPIs
+#LOOK INTO THIS. PRE_post and treat _pre post dropping out
 summary(mod_ds1c<-glm.nb(daily_deaths~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_deaths2c))
+stargazer(mod_ds1c, apply.coef=exp, type="text")
 rse_mod_ds1c<-exp(coeftest(mod_ds1c, vcov = vcovHC,  cluster= ~cities))
 rci_mod_ds1c<-exp(coefci(mod_ds1c, vcov = vcovHC,  cluster= ~cities))
-
+rci_mod_ds1c
 # sensitivity analysis 3
 #only 7 day case lag + 21 day death 
 summary(mod_ds1d<-glm.nb(daily_deaths~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_deaths2d))
 rse_mod_ds1d<-exp(coeftest(mod_ds1d, vcov = vcovHC,  cluster= ~cities))
 rci_mod_ds1d<-exp(coefci(mod_ds1d, vcov = vcovHC,  cluster= ~cities))
-
+rci_mod_ds1d
 #Sensitivity 4
 #remove the non bchc cities 
 summary(mod_ds1e<-glm.nb(daily_deaths~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_deaths2e))
 rse_mod_ds1e<-exp(coeftest(mod_ds1e, vcov = vcovHC,  cluster= ~cities))
 rci_mod_ds1e<-exp(coefci(mod_ds1e, vcov = vcovHC,  cluster= ~cities))
-
+rci_mod_ds1e
 
 model_deaths_s1<-list(mod_ds1b, mod_ds1c, mod_ds1d, mod_ds1e)
 stargazer(model_deaths_s1, apply.coef=exp, type="text", title="sensitivity death 1", out="results/table1a_deathsS4.txt")
@@ -821,6 +862,7 @@ cumulative1<-county_cases2%>%
   summarize(total=sum(daily_count))%>%
   summarize(tots=sum(total))
 
+
 means<-county_cases2%>%
   group_by(treat1, pre_post, FIPS)%>%
   summarize(sum=sum(daily_count))%>%
@@ -831,5 +873,7 @@ means<-county_cases2%>%
 means_2<-county_cases2%>%
   group_by(treat1, pre_post)%>%
   summarize(mean=mean(case_rate))
-asdfa
 
+#total population 
+total_pop<-population1%>%
+  summarize(total=sum(pop))

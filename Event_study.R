@@ -24,14 +24,14 @@ county_cases<-fread("data/time_series_covid19_confirmed_US.csv")
 county_deaths<-fread("data/time_series_covid19_deaths_US.csv")
 #limit dataset to our counties/cities-- select cities wherever available 
 # for austin- city is code 48015 and coutny is 48453-- using county (bc don't trust city)
-cities<-c(42101,18097,32003, 41051, 4013, 48453, 48113, 48201,  48029, 13121,45019)
+cities<-c(42101,18097,6075, 55079, 4013, 48453, 48113, 48201,  48029, 13121,45019)
 
 #get county population estimates (Downloaded from here)-https://www.census.gov/data/datasets/time-series/demo/popest/2010s-counties-total.html
 population<-fread("data/co-est2019-annres.csv", header=TRUE)
 
 #names of counties of interest
 cities_pop<-c(".Philadelphia County, Pennsylvania", ".Marion County, Indiana", 
-              ".Clark County, Nevada", ".Multnomah County, Oregon", ".Maricopa County, Arizona", 
+              ".San Francisco County, California", ".Milwaukee County, Wisconsin", ".Maricopa County, Arizona", 
               ".Travis County, Texas", ".Dallas County, Texas", ".Harris County, Texas", 
               ".Bexar County, Texas", ".Fulton County, Georgia", ".Charleston County, South Carolina")
 
@@ -42,8 +42,8 @@ population1<-population%>%
   mutate(FIPS=case_when(
     V1==".Philadelphia County, Pennsylvania"~42101,
     V1==".Marion County, Indiana"~18097,
-    V1==".Clark County, Nevada"~32003, 
-    V1==".Multnomah County, Oregon"~41051, 
+    V1==".San Francisco County, California"~6075, 
+    V1==".Milwaukee County, Wisconsin"~55079, 
     V1==".Maricopa County, Arizona"~4013, 
     V1==".Travis County, Texas"~48453, 
     V1==".Dallas County, Texas"~48113, 
@@ -52,8 +52,10 @@ population1<-population%>%
     V1==".Fulton County, Georgia"~13121, 
     V1==".Charleston County, South Carolina"~45019))%>%
   rename(pop='2019')%>%
-  select(pop, FIPS)
+  dplyr::select(pop, FIPS)
 
+
+#create weekly vars for event model 
 #create weekly vars for event model 
 event_model<-county_cases1%>%
   mutate(treat_start=case_when( 
@@ -61,10 +63,8 @@ event_model<-county_cases1%>%
     Admin2=="Fulton"~ "2020-04-27",
     Admin2=="Philadelphia"~"2020-06-26",
     Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar", "Maricopa")~ "2020-05-01",
-    #portland
-    Admin2=="Multnomah"~"2020-05-15", 
-    #nevada
-    Admin2=="Clark"~"2020-05-09", 
+    Admin2=="San Francisco"~"2020-08-31", 
+    Admin2=="Milwaukee"~"2020-05-14", 
     #indianapolis
     Admin2=="Marion"~"2020-05-11",
     Admin2=="Charleston"~"2020-05-11"), 
@@ -76,12 +76,10 @@ event_model<-county_cases1%>%
       Admin2=="Philadelphia"~"2020-06-05",
       Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar")~ "2020-05-01",
       Admin2=="Maricopa" ~"2020-05-16",
-      #portland
-      Admin2=="Multnomah"~"2020-06-19", 
-      #las vegas
-      Admin2=="Clark"~"2020-05-09", 
+      Admin2=="San Francisco"~"2020-05-14", 
+      Admin2=="Milwaukee"~"2020-05-09", 
       #indianapolis
-      Admin2=="Marion"~"2020-05-18",
+      Admin2=="Marion"~"2020-05-13",
       Admin2=="Charleston"~"2020-05-04"), 
     stay_start=as.Date(stay_start, "%Y-%m-%d"), 
     #create mask mandate var     
@@ -91,10 +89,8 @@ event_model<-county_cases1%>%
       Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar")~ "2020-07-03",
       #phoenix
       Admin2=="Maricopa"~"2020-06-20",
-      #portland
-      Admin2=="Multnomah"~"2020-07-01", 
-      #las vegas
-      Admin2=="Clark"~"2020-06-26", 
+      Admin2=="San Francisco"~"2020-04-17", 
+      Admin2=="Milwaukee"~"2020-05-14", 
       #indianapolis
       Admin2=="Marion"~"2020-07-09",
       Admin2=="Charleston"~"2020-07-01"), 
@@ -105,10 +101,8 @@ event_model<-county_cases1%>%
       Admin2=="Fulton"~ "2020-03-16",
       Admin2=="Philadelphia"~"2020-03-18",
       Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar", "Maricopa")~ "2020-03-19",
-      #portland
-      Admin2=="Multnomah"~"2020-04-01", 
-      #nevada
-      Admin2=="Clark"~"2020-03-29", 
+      Admin2=="San Francisco"~"2020-03-01", 
+      Admin2=="Milwaukee"~"2020-03-27", 
       #indianapolis
       Admin2=="Marion"~"2020-03-19",
       Admin2=="Charleston"~"2020-03-19"),
@@ -119,10 +113,8 @@ event_model<-county_cases1%>%
       Admin2=="Fulton"~ "2020-10-31",
       Admin2=="Philadelphia"~"2020-12-31",
       Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar", "Maricopa")~ "2020-05-19",
-      #portland
-      Admin2=="Multnomah"~"2020-12-31", 
-      #las vegas
-      Admin2=="Clark"~"2020-10-14", 
+      Admin2=="San Francisco"~"2020-12-31", 
+      Admin2=="Milwaukee"~"2020-05-27", 
       #indianapolis
       Admin2=="Marion"~"2020-08-14",
       Admin2=="Charleston"~"2020-05-15"),
@@ -144,10 +136,9 @@ event_model$time= as.numeric(difftime(event_model$date,event_model$treat_start, 
 event_model$weeks= as.integer(difftime(event_model$date,event_model$treat_start, units = c("weeks"), round()))
 
 
-
 #not efficient but dif date uses calendar weeks, so wasn't working
-# our control here is re-opening 
-#this is currently sensitivity 3, but probably will be main model. 
+# NOTE: OUR CONTROL HERE IS REOPENING!! (not staying closed)
+#this is currently sensitivity 3, but probably will be main model 
 
 #also tried to enter the weeks_prior and weeks_post as a factor into the regresssion
 # and it created weird weeks_o periods. So I created dummies instead....

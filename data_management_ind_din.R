@@ -42,21 +42,18 @@ population1<-population%>%
     V1==".Fulton County, Georgia"~13121, 
     V1==".Charleston County, South Carolina"~45019))%>%
   rename(pop='2019')%>%
-  select(pop, FIPS)
-
-
+  dplyr::select(pop, FIPS)
 
 ### MAIN ANALYSIS -Using date of state reopening as date of treatment for treatment cities
 #limit cases to counties of interest and time periods of study period
 
-
 county_cases1<-county_cases%>%
   filter(FIPS %in% cities)%>%
   #create treatment/control var 
-  mutate(treat1=as.factor(case_when(Admin2%in% c("Philadelphia", "Marion", "San Francisco", "Milwaukee")~1, 
+  mutate(treat1=case_when(Admin2%in% c("Philadelphia", "Marion", "San Francisco", "Milwaukee")~1, 
                                     Admin2%in% c("Maricopa","Travis", "Bexar", "Dallas",	
-                                                 "Harris", "Fulton", "Charleston")~0)))%>%
-  select(UID, FIPS, Admin2, Province_State, '3/1/20':'11/1/20', treat1)%>%
+                                                 "Harris", "Fulton", "Charleston")~0))%>%
+  dplyr::select(UID, FIPS, Admin2, Province_State, '3/1/20':'11/1/20', treat1)%>%
   pivot_longer(!c(UID, FIPS, Admin2, Province_State,treat1), names_to="date", values_to="cases")%>%         
   #get daily count by taking difference from one day to next
   mutate(cities=as.factor(case_when(FIPS==42101~"Philadelphia",
@@ -87,10 +84,10 @@ county_cases1<-county_cases%>%
            Admin2=="Philadelphia"~"2020-06-05",
            Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar")~ "2020-05-01",
            Admin2=="Maricopa" ~"2020-05-16",
-           #portland
-           Admin2=="Multnomah"~"2020-06-19", 
-           #las vegas
-           Admin2=="Clark"~"2020-05-09", 
+           #San Francisco
+           Admin2=="San Francisco"~"2020-05-14", 
+           #Milwaukee
+           Admin2=="Milwaukee"~"2020-05-13", 
            #indianapolis
            Admin2=="Marion"~"2020-05-18",
            Admin2=="Charleston"~"2020-05-04"), 
@@ -102,10 +99,10 @@ county_cases1<-county_cases%>%
            Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar")~ "2020-07-03",
            #phoenix
            Admin2=="Maricopa"~"2020-06-20",
-           #portland
-           Admin2=="Multnomah"~"2020-07-01", 
-           #las vegas
-           Admin2=="Clark"~"2020-06-26", 
+           #San Francisco
+           Admin2=="San Francisco"~"2020-04-17", 
+           #Milwaukee
+           Admin2=="Milwaukee"~"2020-05-14", 
            #indianapolis
            Admin2=="Marion"~"2020-07-09",
            Admin2=="Charleston"~"2020-07-01"), 
@@ -116,10 +113,10 @@ county_cases1<-county_cases%>%
            Admin2=="Fulton"~ "2020-03-16",
            Admin2=="Philadelphia"~"2020-03-18",
            Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar", "Maricopa")~ "2020-03-19",
-           #portland
-           Admin2=="Multnomah"~"2020-04-01", 
-           #nevada
-           Admin2=="Clark"~"2020-03-29", 
+           #San Francisco
+           Admin2=="San Francisco"~"2020-03-01", 
+           #Milwaukee
+           Admin2=="Milwaukee"~"2020-03-27", 
            #indianapolis
            Admin2=="Marion"~"2020-03-19",
            Admin2=="Charleston"~"2020-03-19"),
@@ -130,10 +127,10 @@ county_cases1<-county_cases%>%
            Admin2=="Fulton"~ "2020-10-31",
            Admin2=="Philadelphia"~"2020-12-31",
            Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar", "Maricopa")~ "2020-05-19",
-           #portland
-           Admin2=="Multnomah"~"2020-12-31", 
-           #las vegas
-           Admin2=="Clark"~"2020-10-14", 
+           #San Francisco- no end during study
+           Admin2=="San Francisco"~"2020-12-31", 
+           #Milwaukee
+           Admin2=="Milwaukee"~"2020-05-27", 
            #indianapolis
            Admin2=="Marion"~"2020-08-14",
            Admin2=="Charleston"~"2020-05-15"),
@@ -169,7 +166,7 @@ save(county_cases2, file="daily_count.Rdata")
 
 #Sensitivity Analyses 
 
-#Sensivity 1:no lag for other NPIs
+#Sensitivity 1:no lag for other NPIs
 county_cases2a<-county_cases1%>%
   mutate(pre_post=ifelse(time>=14,1,0), 
          at_home=ifelse(stay_days<=0, 1, 0), 
@@ -258,7 +255,7 @@ county_cases2e<-county_cases1%>%
 #remove the non bchc cities 
 #option 1, using 14 day lag for all NPIs
 
-bchc<-list("Philadelphia","Indianapolis", "Las Vegas", "Portland", "Pheonix", "Austin", "Dallas", "Houston","San Antonio") 
+bchc<-list("Philadelphia","Indianapolis", "San Francisco", "Pheonix", "Austin", "Dallas", "Houston","San Antonio") 
 
 county_cases2f<-county_cases1%>%
   filter(cities %in% bchc)%>%
@@ -297,10 +294,8 @@ event_model<-county_cases1%>%
     Admin2=="Fulton"~ "2020-04-27",
     Admin2=="Philadelphia"~"2020-06-26",
     Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar", "Maricopa")~ "2020-05-01",
-    #portland
-    Admin2=="Multnomah"~"2020-05-15", 
-    #nevada
-    Admin2=="Clark"~"2020-05-09", 
+    Admin2=="San Francisco"~"2020-08-31", 
+    Admin2=="Milwaukee"~"2020-05-14", 
     #indianapolis
     Admin2=="Marion"~"2020-05-11",
     Admin2=="Charleston"~"2020-05-11"), 
@@ -312,12 +307,10 @@ event_model<-county_cases1%>%
       Admin2=="Philadelphia"~"2020-06-05",
       Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar")~ "2020-05-01",
       Admin2=="Maricopa" ~"2020-05-16",
-      #portland
-      Admin2=="Multnomah"~"2020-06-19", 
-      #las vegas
-      Admin2=="Clark"~"2020-05-09", 
+      Admin2=="San Francisco"~"2020-05-14", 
+      Admin2=="Milwaukee"~"2020-05-09", 
       #indianapolis
-      Admin2=="Marion"~"2020-05-18",
+      Admin2=="Marion"~"2020-05-13",
       Admin2=="Charleston"~"2020-05-04"), 
     stay_start=as.Date(stay_start, "%Y-%m-%d"), 
     #create mask mandate var     
@@ -327,10 +320,8 @@ event_model<-county_cases1%>%
       Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar")~ "2020-07-03",
       #phoenix
       Admin2=="Maricopa"~"2020-06-20",
-      #portland
-      Admin2=="Multnomah"~"2020-07-01", 
-      #las vegas
-      Admin2=="Clark"~"2020-06-26", 
+      Admin2=="San Francisco"~"2020-04-17", 
+      Admin2=="Milwaukee"~"2020-05-14", 
       #indianapolis
       Admin2=="Marion"~"2020-07-09",
       Admin2=="Charleston"~"2020-07-01"), 
@@ -341,10 +332,8 @@ event_model<-county_cases1%>%
       Admin2=="Fulton"~ "2020-03-16",
       Admin2=="Philadelphia"~"2020-03-18",
       Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar", "Maricopa")~ "2020-03-19",
-      #portland
-      Admin2=="Multnomah"~"2020-04-01", 
-      #nevada
-      Admin2=="Clark"~"2020-03-29", 
+      Admin2=="San Francisco"~"2020-03-01", 
+      Admin2=="Milwaukee"~"2020-03-27", 
       #indianapolis
       Admin2=="Marion"~"2020-03-19",
       Admin2=="Charleston"~"2020-03-19"),
@@ -355,10 +344,8 @@ event_model<-county_cases1%>%
       Admin2=="Fulton"~ "2020-10-31",
       Admin2=="Philadelphia"~"2020-12-31",
       Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar", "Maricopa")~ "2020-05-19",
-      #portland
-      Admin2=="Multnomah"~"2020-12-31", 
-      #las vegas
-      Admin2=="Clark"~"2020-10-14", 
+      Admin2=="San Francisco"~"2020-12-31", 
+      Admin2=="Milwaukee"~"2020-05-27", 
       #indianapolis
       Admin2=="Marion"~"2020-08-14",
       Admin2=="Charleston"~"2020-05-15"),
@@ -695,7 +682,7 @@ county_deaths1<-county_deaths%>%
   mutate(treat1=as.factor(case_when(Admin2%in% c("Philadelphia", "Marion", "San Francisco", "Milwaukee")~1, 
                                     Admin2%in% c("Maricopa","Travis", "Bexar", "Dallas",	
                                                  "Harris", "Fulton", "Charleston")~0)))%>%
-  select(UID, FIPS, Admin2, Province_State, '3/1/20':'11/1/20', treat1)%>%
+  dplyr::select(UID, FIPS, Admin2, Province_State, '3/1/20':'11/1/20', treat1)%>%
   pivot_longer(!c(UID, FIPS, Admin2, Province_State,treat1), names_to="date", values_to="deaths")%>%         
   #get daily count by taking difference from one day to next
   mutate(cities=as.factor(case_when(FIPS==42101~"Philadelphia",
@@ -727,10 +714,8 @@ county_deaths1<-county_deaths%>%
            Admin2=="Philadelphia"~"2020-06-05",
            Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar")~ "2020-05-01",
            Admin2=="Maricopa" ~"2020-05-16",
-           #portland
-           Admin2=="Multnomah"~"2020-06-19", 
-           #las vegas
-           Admin2=="Clark"~"2020-05-09", 
+           Admin2=="San Francisco"~"2020-05-14", 
+           Admin2=="Milwaukee"~"2020-05-13", 
            #indianapoli
            Admin2=="Marion"~"2020-05-18",
            Admin2=="Charleston"~"2020-05-04"), 
@@ -741,11 +726,9 @@ county_deaths1<-county_deaths%>%
            Admin2=="Philadelphia"~"2020-07-01",
            Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar")~ "2020-07-03",
            #phoenix
-           Admin2=="Maricopa"~"2020-06-20",
-           #portland
-           Admin2=="Multnomah"~"2020-07-01", 
-           #las vegas
-           Admin2=="Clark"~"2020-06-26", 
+           Admin2=="Maricopa"~"2020-06-18",
+           Admin2=="San Francisco"~"2020-07-01", 
+           Admin2=="Milwaukee"~"2020-05-14", 
            #indianapolis
            Admin2=="Marion"~"2020-07-09",
            Admin2=="Charleston"~"2020-07-01"), 
@@ -756,10 +739,8 @@ county_deaths1<-county_deaths%>%
            Admin2=="Fulton"~ "2020-03-16",
            Admin2=="Philadelphia"~"2020-03-18",
            Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar", "Maricopa")~ "2020-03-19",
-           #portland
-           Admin2=="Multnomah"~"2020-04-01", 
-           #nevada
-           Admin2=="Clark"~"2020-03-29", 
+           Admin2=="San Francisco"~"2020-03-01", 
+           Admin2=="Milwaukee"~"2020-03-27", 
            #indianapolis
            Admin2=="Marion"~"2020-03-19",
            Admin2=="Charleston"~"2020-03-19"),
@@ -770,10 +751,8 @@ county_deaths1<-county_deaths%>%
            Admin2=="Fulton"~ "2020-10-31",
            Admin2=="Philadelphia"~"2020-12-31",
            Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar", "Maricopa")~ "2020-05-19",
-           #portland
-           Admin2=="Multnomah"~"2020-12-31", 
-           #las vegas
-           Admin2=="Clark"~"2020-10-14", 
+           Admin2=="San Francisco"~"2020-12-31", 
+           Admin2=="Milwaukee"~"2020-05-27", 
            #indianapolis
            Admin2=="Marion"~"2020-08-14",
            Admin2=="Charleston"~"2020-05-15"),
@@ -868,7 +847,7 @@ county_deaths2d<-county_deaths1%>%
 
 #Sensitivity 4
 #remove the non bchc cities 
-bchc<-list("Philadelphia","Indianapolis", "Las Vegas", "Portland", "Pheonix", "Austin", "Dallas", "Houston","San Antonio") 
+bchc<-list("Philadelphia","Indianapolis", "San Francisco", "Pheonix", "Austin", "Dallas", "Houston","San Antonio") 
 
 county_deaths2e<-county_deaths1%>%
   filter(cities %in% bchc)%>%
@@ -904,10 +883,8 @@ event_model_death<-county_deaths1%>%
     Admin2=="Fulton"~ "2020-04-27",
     Admin2=="Philadelphia"~"2020-06-26",
     Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar", "Maricopa")~ "2020-05-01",
-    #portland
-    Admin2=="Multnomah"~"2020-05-15", 
-    #nevada
-    Admin2=="Clark"~"2020-05-09", 
+    Admin2=="San Francisco"~"2020-08-31", 
+    Admin2=="Milwaukee"~"2020-05-14", 
     #indianapolis
     Admin2=="Marion"~"2020-05-11",
     Admin2=="Charleston"~"2020-05-11"), 
@@ -919,10 +896,8 @@ event_model_death<-county_deaths1%>%
       Admin2=="Philadelphia"~"2020-06-05",
       Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar")~ "2020-05-01",
       Admin2=="Maricopa" ~"2020-05-16",
-      #portland
-      Admin2=="Multnomah"~"2020-06-19", 
-      #las vegas
-      Admin2=="Clark"~"2020-05-09", 
+      Admin2=="San Francisco"~"2020-05-14", 
+      Admin2=="Milwaukee"~"2020-05-13", 
       #indianapolis
       Admin2=="Marion"~"2020-05-18",
       Admin2=="Charleston"~"2020-05-04"), 
@@ -934,10 +909,8 @@ event_model_death<-county_deaths1%>%
       Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar")~ "2020-07-03",
       #phoenix
       Admin2=="Maricopa"~"2020-06-20",
-      #portland
-      Admin2=="Multnomah"~"2020-07-01", 
-      #las vegas
-      Admin2=="Clark"~"2020-06-26", 
+      Admin2=="San Francisco"~"2020-04-17", 
+      Admin2=="Milwaukee"~"2020-05-14", 
       #indianapolis
       Admin2=="Marion"~"2020-07-09",
       Admin2=="Charleston"~"2020-07-01"), 
@@ -948,10 +921,8 @@ event_model_death<-county_deaths1%>%
       Admin2=="Fulton"~ "2020-03-16",
       Admin2=="Philadelphia"~"2020-03-18",
       Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar", "Maricopa")~ "2020-03-19",
-      #portland
-      Admin2=="Multnomah"~"2020-04-01", 
-      #nevada
-      Admin2=="Clark"~"2020-03-29", 
+      Admin2=="San Francisco"~"2020-03-01", 
+      Admin2=="Milwaukee"~"2020-03-27", 
       #indianapolis
       Admin2=="Marion"~"2020-03-19",
       Admin2=="Charleston"~"2020-03-19"),
@@ -962,10 +933,8 @@ event_model_death<-county_deaths1%>%
       Admin2=="Fulton"~ "2020-10-31",
       Admin2=="Philadelphia"~"2020-12-31",
       Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar", "Maricopa")~ "2020-05-19",
-      #portland
-      Admin2=="Multnomah"~"2020-12-31", 
-      #las vegas
-      Admin2=="Clark"~"2020-10-14", 
+      Admin2=="San Francisco"~"2020-12-31", 
+      Admin2=="Milwaukee"~"2020-05-27", 
       #indianapolis
       Admin2=="Marion"~"2020-08-14",
       Admin2=="Charleston"~"2020-05-15"),
@@ -1053,7 +1022,7 @@ save(event_model_death1, file="event_model_death1.Rdata")
 
 #event model for graphing 
 #fix this 
-event_model_death2m<-event_model_death%>%
+event_model_death2<-event_model_death%>%
     filter(time>=-28 & time<=62)%>%
       mutate(weeks= as.factor(case_when(
         time %in% c(-1:-7)~1,
@@ -1085,10 +1054,6 @@ event_model_death2m<-event_model_death%>%
                 weekly_rate=sum(death_rate))%>%
       ungroup()
 
-
-levels(event_model_death2$weeks)
-table(event_model_death2$weeks)
-
 save(event_model_death2, file="event_model_death2.Rdata")
 ###MOVING AVERAGES
 #calculate moving average 
@@ -1105,31 +1070,8 @@ roll_avg_death <- county_deaths2 %>%
 
 save(roll_avg_death, file="roll_avg_death.Rdata")
 
-#tidy data 
-NewDeathsTidy <- roll_avg_death %>% 
-  # pivot longer
-  tidyr::pivot_longer(names_to = "new_conf_av_key", 
-                      values_to = "new_conf_av_value", 
-                      cols = c(death_03da,
-                               death_07da)) %>% 
-  # better labels for printing
-  dplyr::mutate(new_conf_av_key = dplyr::case_when(
-    new_conf_av_key == "death_03da" ~ "3-day new deaths",
-    new_conf_av_key == "death_07da" ~ "7-day new deaths",
-    TRUE ~ NA_character_)) %>% 
-  # reduce vars
-  dplyr::select(time, 
-                date, 
-                cities, 
-                Province_State,
-                new_conf_av_value, 
-                new_conf_av_key)
-
-save(NewDeathsTidy, file="NewdeathsTidy.Rdata")
-
-
+#-----------------------------------------------------------#
 #SENSITIVITY ANALYSIS 
-
 #Dates using dates of reopenings for each city (not our actual study periods)
 #limit cases to counties of interest and time periods of study period
 county_cases_sens1<-county_cases%>%
@@ -1138,7 +1080,7 @@ county_cases_sens1<-county_cases%>%
   mutate(treat1=case_when(Admin2%in% c("Philadelphia", "Marion", "San Francisco", "Milwaukee")~1, 
                           Admin2%in% c("Maricopa","Travis", "Bexar", "Dallas",	
                                        "Harris", "Fulton", "Charleston", "Miami-Dade")~0))%>%
-  select(UID, FIPS, Admin2, Province_State, '4/1/20':'10/1/20', treat1)%>%
+  dplyr::select(UID, FIPS, Admin2, Province_State, '4/1/20':'12/1/20', treat1)%>%
   pivot_longer(!c(UID, FIPS, Admin2, Province_State, treat1), names_to="date", values_to="cases")%>%         
   #get daily count by taking difference from one day to next
   mutate(cities=as.factor(case_when(FIPS==42101~"Philadelphia",
@@ -1158,10 +1100,8 @@ county_cases_sens1<-county_cases%>%
                                       Admin2=="Philadelphia"~"2020-06-05",
                                       Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar")~ "2020-05-01",
                                       Admin2=="Maricopa" ~"2020-05-16",
-                                      #portland
-                                      Admin2=="Multnomah"~"2020-06-19", 
-                                      #las vegas
-                                      Admin2=="Clark"~"2020-05-09", 
+                                      Admin2=="San Francisco"~"2020-05-14", 
+                                      Admin2=="Milwaukee"~"2020-05-13", 
                                       #indianapolis
                                       Admin2=="Marion"~"2020-05-18",
                                       Admin2=="Charleston"~"2020-05-04"), 
@@ -1173,10 +1113,8 @@ county_cases_sens1<-county_cases%>%
                                       Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar")~ "2020-07-03",
                                       #phoenix
                                       Admin2=="Maricopa"~"2020-06-20",
-                                      #portland
-                                      Admin2=="Multnomah"~"2020-07-01", 
-                                      #las vegas
-                                      Admin2=="Clark"~"2020-06-26", 
+                                      Admin2=="San Francisco"~"2020-04-17", 
+                                      Admin2=="Milwaukee"~"2020-05-14", 
                                       #indianapolis
                                       Admin2=="Marion"~"2020-07-09",
                                       Admin2=="Charleston"~"2020-07-01"), 
@@ -1187,10 +1125,8 @@ county_cases_sens1<-county_cases%>%
                                       Admin2=="Fulton"~ "2020-03-16",
                                       Admin2=="Philadelphia"~"2020-03-18",
                                       Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar", "Maricopa")~ "2020-03-19",
-                                      #portland
-                                      Admin2=="Multnomah"~"2020-04-01", 
-                                      #nevada
-                                      Admin2=="Clark"~"2020-03-29", 
+                                      Admin2=="San Francisco"~"2020-03-01", 
+                                      Admin2=="Milwaukee"~"2020-03-27", 
                                       #indianapolis
                                       Admin2=="Marion"~"2020-03-19",
                                       Admin2=="Charleston"~"2020-03-19"),
@@ -1201,10 +1137,8 @@ county_cases_sens1<-county_cases%>%
                                       Admin2=="Fulton"~ "2020-10-31",
                                       Admin2=="Philadelphia"~"2020-12-31",
                                       Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar", "Maricopa")~ "2020-05-19",
-                                      #portland
-                                      Admin2=="Multnomah"~"2020-12-31", 
-                                      #las vegas
-                                      Admin2=="Clark"~"2020-10-14", 
+                                      Admin2=="San Francisco"~"2020-12-31", 
+                                      Admin2=="Milwaukee"~"2020-05-27", 
                                       #indianapolis
                                       Admin2=="Marion"~"2020-08-14",
                                       Admin2=="Charleston"~"2020-05-15"),
