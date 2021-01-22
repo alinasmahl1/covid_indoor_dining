@@ -18,6 +18,9 @@ library(sandwich)
 library(MASS)
 library(lmtest)
 library(emmeans)
+load("daily_count.Rdata")
+
+
 
 #IMPORT COUNTY LEVEL DATA
 county_cases<-fread("data/time_series_covid19_confirmed_US.csv")
