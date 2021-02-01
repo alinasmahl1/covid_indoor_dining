@@ -10,7 +10,7 @@ library(tidycensus)
 library(lubridate)
 
 #IMPORT COUNTY LEVEL DATA
-county_cases<-fread("data/time_series_covid19_confirmed_US.csv")
+county_cases<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv")
 county_deaths<-fread("data/time_series_covid19_deaths_US.csv")
 #limit dataset to our counties/cities-- select cities wherever available 
 # for austin- city is code 48015 and coutny is 48453-- using county (bc don't trust city)
@@ -144,6 +144,7 @@ county_cases1<-county_cases%>%
          evict_days_end=as.integer(difftime(date,eviction_end, units=c("days"))))
 county_cases1$daily_count[county_cases1$daily_count< 0] <- 0
 
+
 hist(county_cases1$daily_count)
 
 #option 1, using 14 day lag for all NPIs
@@ -162,7 +163,8 @@ county_cases2<-county_cases1%>%
   #create rates  
   mutate(case_rate=daily_count/pop*100000)
 
-save(county_cases2, file="daily_count.Rdata")
+save(county_cases1, 
+  county_cases2, file="daily_count.Rdata")
 
 #Sensitivity Analyses 
 
@@ -286,7 +288,6 @@ save(county_cases2,
 ##################################################################
 # Event Study Model 
 
-
 #create weekly vars for event model 
 event_model<-county_cases1%>%
   mutate(treat_start=case_when( 
@@ -366,11 +367,133 @@ event_model<-county_cases1%>%
 event_model$time= as.numeric(difftime(event_model$date,event_model$treat_start, units = c("days")))
 event_model$weeks= as.integer(difftime(event_model$date,event_model$treat_start, units = c("weeks"), round()))
 
+# NOTE: OUR CONTROL HERE IS REOPENING!! (not staying closed)
 
 #not efficient but dif date uses calendar weeks, so wasn't working
 # our control here is re-opening 
 
 event_model1<-event_model%>%
+  mutate(weeks1=as.factor(floor(time/7)+1), 
+  stay_week=as.factor(floor(stay_days/7)))
+                      
+#Event model sensitivity 2: limit study period to 4 weeks pre and 8 weeks (2 weeks lag + 6 weeks) (or 6 pre and 6 post)
+event_model1<-event_model%>%
+  filter(time>=-28 & time<=56)%>%
+  mutate(weeks_prior=as.factor(case_when(
+    treat1==0 & time %in% c(-1:-7)~1,
+    treat1==0 & time %in% c(-7:-14)~2, 
+    treat1==0 & time %in% c(-15:-21)~3, 
+    treat1==0 & time %in% c(-22:-28)~4, 
+    TRUE~0)), 
+    weeks_post=as.factor(case_when( 
+      treat1==0 & time %in% c(0:7)~1, 
+      treat1==0 & time %in% c(8:14)~2, 
+      treat1==0 & time %in% c(15:21)~3, 
+      treat1==0 & time %in% c(22:28)~4, 
+      treat1==0 & time %in% c(29:35)~5, 
+      treat1==0 & time %in% c(36:42)~6, 
+      treat1==0 & time %in% c(42:49)~7, 
+      treat1==0 & time %in% c(50:56)~8, 
+      TRUE~0)),  
+    #ordinal var for weeks since stay at home lifted
+    #would expect beta to go in opposite direction bc cases likely increase after opening
+    stay_week=as.factor(case_when(
+      stay_days <0 ~0,
+      stay_days %in% c(0:7)~1, 
+      stay_days %in% c(8:14)~2, 
+      stay_days %in% c(15:21)~3, 
+      stay_days %in% c(22:28)~4, 
+      stay_days >28 ~ 5)), 
+    #creat var for weeks since mask mandate 
+    mask_week=as.factor(case_when(
+      mask_days <0 ~0, 
+      mask_days %in% c(0:7)~1, 
+      mask_days %in% c(8:14)~2, 
+      mask_days %in% c(15:21)~3, 
+      mask_days %in% c(22:28)~4, 
+      mask_days >28 ~5)), 
+    #create var for weeks since eviction 
+    evict_days=case_when(date>eviction_end~-1, 
+                         TRUE~as.numeric(evict_days)),     
+    evict_week=as.factor(case_when(
+      evict_days <0 ~0, 
+      evict_days %in% c(0:7)~1, 
+      evict_days %in% c(8:14)~2, 
+      evict_days %in% c(15:21)~3, 
+      evict_days %in% c(22:28)~4, 
+      evict_days >28 ~5)))%>%
+  #make weeks prior and weeks post dummy vars 
+  dummy_cols(select_columns = 'weeks_prior')%>%
+  dummy_cols(select_columns='weeks_post')
+
+save(event_model1, file="event_model3.Rdata")
+
+#Sensitivity 1: period to 84 days (12 weeks) (10 before, 10 after + 2 week lag)
+event_model2<-event_model%>%
+  mutate(weeks_prior=as.factor(case_when(
+    treat1==0 & time %in% c(-1:-7)~1,
+    treat1==0 & time %in% c(-7:-14)~2, 
+    treat1==0 & time %in% c(-15:-21)~3, 
+    treat1==0 & time %in% c(-22:-28)~4, 
+    treat1==0 & time %in% c(-29:-35)~5, 
+    treat1==0 & time %in% c(-36:-42)~6, 
+    treat1==0 & time %in% c(-42:-49)~7, 
+    treat1==0 & time %in% c(-50:-56)~8, 
+    treat1==0 & time %in% c(-57:-63)~9, 
+    treat1==0 & time %in% c(-64:-70)~10, 
+    treat1==0 & time %in% c(-71:-77)~11, 
+    treat1==0 & time %in% c(-78:-84)~12, 
+    TRUE~0)), 
+    weeks_post=as.factor(case_when( 
+      treat1==0 & time %in% c(0:7)~1, 
+      treat1==0 & time %in% c(8:14)~2, 
+      treat1==0 & time %in% c(15:21)~3, 
+      treat1==0 & time %in% c(22:28)~4, 
+      treat1==0 & time %in% c(29:35)~5, 
+      treat1==0 & time %in% c(36:42)~6, 
+      treat1==0 & time %in% c(42:49)~7, 
+      treat1==0 & time %in% c(50:56)~8, 
+      treat1==0 & time %in% c(57:63)~9, 
+      treat1==0 & time %in% c(64:70)~10, 
+      treat1==0 & time %in% c(71:77)~11, 
+      treat1==0 & time %in% c(78:84)~12,
+      TRUE~0)),  
+    #ordinal var for weeks since stay at home lifted
+    stay_week=as.factor(case_when(
+      stay_days <0 ~0,
+      stay_days %in% c(0:7)~1, 
+      stay_days %in% c(8:14)~2, 
+      stay_days %in% c(15:21)~3, 
+      stay_days %in% c(22:28)~4, 
+      stay_days >28 ~ 5)), 
+    #creat var for weeks since mask mandate 
+    mask_week=as.factor(case_when(
+      mask_days <0 ~0, 
+      mask_days %in% c(0:7)~1, 
+      mask_days %in% c(8:14)~2, 
+      mask_days %in% c(15:21)~3, 
+      mask_days %in% c(22:28)~4, 
+      mask_days >28 ~5)), 
+    #create var for weeks since eviction 
+    ########need to fix this bc eviction bans had end dates
+    evict_days=case_when(date>eviction_end~-1, 
+                         TRUE~as.numeric(evict_days)),     
+    evict_week=as.factor(case_when(
+      evict_days <0 ~0, 
+      evict_days %in% c(0:7)~1, 
+      evict_days %in% c(8:14)~2, 
+      evict_days %in% c(15:21)~3, 
+      evict_days %in% c(22:28)~4, 
+      evict_days >28 ~5)))%>%
+  filter(time>-70 & time<84)%>%
+  dummy_cols(select_columns = 'weeks_prior')%>%
+  dummy_cols(select_columns='weeks_post')
+
+
+
+#sensitivity 2--no limit on NPI indicators
+event_model3<-event_model%>%
+  filter(time>-70 & time<84)%>%
   mutate(weeks_prior=as.factor(case_when(
     treat1==0 & time %in% c(-1:-7)~1,
     treat1==0 & time %in% c(-7:-14)~2, 
@@ -462,140 +585,15 @@ event_model1<-event_model%>%
       evict_days %in% c(92:98)~14,
       evict_days %in% c(99:105) ~15, 
       evict_days %in% c(106:112)~16, 
-      TRUE~0)))
+      TRUE~0)))%>%
+  dummy_cols(select_columns = 'weeks_prior')%>%
+  dummy_cols(select_columns='weeks_post')
 
-
-#Sensitivity 1: change other NPI's to 4+ 
-event_model2<-event_model%>%
-  mutate(weeks_prior=as.factor(case_when(
-    treat1==0 & time %in% c(-1:-7)~1,
-    treat1==0 & time %in% c(-7:-14)~2, 
-    treat1==0 & time %in% c(-15:-21)~3, 
-    treat1==0 & time %in% c(-22:-28)~4, 
-    treat1==0 & time %in% c(-29:-35)~5, 
-    treat1==0 & time %in% c(-36:-42)~6, 
-    treat1==0 & time %in% c(-42:-49)~7, 
-    treat1==0 & time %in% c(-50:-56)~8, 
-    treat1==0 & time %in% c(-57:-63)~9, 
-    treat1==0 & time %in% c(-64:-70)~10, 
-    treat1==0 & time %in% c(-71:-77)~11, 
-    treat1==0 & time %in% c(-78:-84)~12, 
-    TRUE~0)), 
-    weeks_post=as.factor(case_when( 
-      treat1==0 & time %in% c(0:7)~1, 
-      treat1==0 & time %in% c(8:14)~2, 
-      treat1==0 & time %in% c(15:21)~3, 
-      treat1==0 & time %in% c(22:28)~4, 
-      treat1==0 & time %in% c(29:35)~5, 
-      treat1==0 & time %in% c(36:42)~6, 
-      treat1==0 & time %in% c(42:49)~7, 
-      treat1==0 & time %in% c(50:56)~8, 
-      treat1==0 & time %in% c(57:63)~9, 
-      treat1==0 & time %in% c(64:70)~10, 
-      treat1==0 & time %in% c(71:77)~11, 
-      treat1==0 & time %in% c(78:84)~12,
-      TRUE~0)),  
-    #ordinal var for weeks since stay at home lifted
-    #would expect beta to go in opposite direction bc cases likely increase after opening
-    stay_week=as.factor(case_when(
-      stay_days <0 ~0,
-      stay_days %in% c(0:7)~1, 
-      stay_days %in% c(8:14)~2, 
-      stay_days %in% c(15:21)~3, 
-      stay_days %in% c(22:28)~4, 
-      stay_days >28 ~ 5)), 
-    #creat var for weeks since mask mandate 
-    mask_week=as.factor(case_when(
-      mask_days <0 ~0, 
-      mask_days %in% c(0:7)~1, 
-      mask_days %in% c(8:14)~2, 
-      mask_days %in% c(15:21)~3, 
-      mask_days %in% c(22:28)~4, 
-      mask_days >28 ~5)), 
-    #create var for weeks since eviction 
-    ########need to fix this bc eviction bans had end dates
-    evict_days=case_when(date>eviction_end~-1, 
-                         TRUE~as.numeric(evict_days)),     
-    evict_week=as.factor(case_when(
-      evict_days <0 ~0, 
-      evict_days %in% c(0:7)~1, 
-      evict_days %in% c(8:14)~2, 
-      evict_days %in% c(15:21)~3, 
-      evict_days %in% c(22:28)~4, 
-      evict_days >28 ~5)))%>%
-  filter(time>-60 & time<84)
-
-#Event model sensitivity 2: limit study period to 4 weeks pre and 8 weeks (2 weeks lag + 6 weeks) (or 6 pre and 6 post)
-event_model3<-event_model%>%
-  mutate(weeks_prior=as.factor(case_when(
-    treat1==0 & time %in% c(-1:-7)~1,
-    treat1==0 & time %in% c(-7:-14)~2, 
-    treat1==0 & time %in% c(-15:-21)~3, 
-    treat1==0 & time %in% c(-22:-28)~4, 
-    treat1==0 & time %in% c(-29:-35)~5, 
-    treat1==0 & time %in% c(-36:-42)~6, 
-    treat1==0 & time %in% c(-42:-49)~7, 
-    treat1==0 & time %in% c(-50:-56)~8, 
-    treat1==0 & time %in% c(-57:-63)~9, 
-    treat1==0 & time %in% c(-64:-70)~10, 
-    treat1==0 & time %in% c(-71:-77)~11, 
-    treat1==0 & time %in% c(-78:-84)~12, 
-    treat1==0 & time %in% c(-85:-91)~13, 
-    treat1==0 & time %in% c(-92:-98)~14,
-    treat1==0 & time %in% c(-99:-105)~15, 
-    treat1==0 & time %in% c(-106:-112)~16,
-    TRUE~0)), 
-    weeks_post=as.factor(case_when( 
-      treat1==0 & time %in% c(0:7)~1, 
-      treat1==0 & time %in% c(8:14)~2, 
-      treat1==0 & time %in% c(15:21)~3, 
-      treat1==0 & time %in% c(22:28)~4, 
-      treat1==0 & time %in% c(29:35)~5, 
-      treat1==0 & time %in% c(36:42)~6, 
-      treat1==0 & time %in% c(42:49)~7, 
-      treat1==0 & time %in% c(50:56)~8, 
-      treat1==0 & time %in% c(57:63)~9, 
-      treat1==0 & time %in% c(64:70)~10, 
-      treat1==0 & time %in% c(71:77)~11, 
-      treat1==0 & time %in% c(78:84)~12,
-      treat1==0 & time %in% c(85:91)~13, 
-      treat1==0 & time %in% c(92:98)~14,
-      treat1==0 & time %in% c(99:105) ~15, 
-      treat1==0 & time %in% c(106:112)~16,
-      TRUE~0)),  
-    #ordinal var for weeks since stay at home lifted
-    #would expect beta to go in opposite direction bc cases likely increase after opening
-    stay_week=as.factor( case_when(
-      stay_days <0 ~0,
-      stay_days %in% c(0:7)~1, 
-      stay_days %in% c(8:14)~2, 
-      stay_days %in% c(15:21)~3, 
-      stay_days %in% c(22:28)~4, 
-      stay_days >28 ~ 5)), 
-    #creat var for weeks since mask mandate 
-    mask_week=as.factor(case_when(
-      mask_days <0 ~0, 
-      mask_days %in% c(0:7)~1, 
-      mask_days %in% c(8:14)~2, 
-      mask_days %in% c(15:21)~3, 
-      mask_days %in% c(22:28)~4, 
-      mask_days >28 ~5)), 
-    #create var for weeks since eviction 
-    ########need to fix this bc eviction bans had end dates
-    evict_days=case_when(date>eviction_end~-1, 
-                         TRUE~as.numeric(evict_days)),     
-    evict_week=as.factor(case_when(
-      evict_days <0 ~0, 
-      evict_days %in% c(0:7)~1, 
-      evict_days %in% c(8:14)~2, 
-      evict_days %in% c(15:21)~3, 
-      evict_days %in% c(22:28)~4, 
-      evict_days >28 ~5)))%>%
-     filter(time>=-28 & time<=42)
   
-#need to check dates and make sure that >112 days is out of the study period
 
-save(event_model1, file="event_model1.Rdata")
+save(event_model1,
+     event_model2, 
+     event_model3, file="event_model1.Rdata")
 
 
 #event model for graphing 
@@ -649,32 +647,9 @@ roll_avg <- county_cases2 %>%
 
 save(roll_avg, file="roll_avg.Rdata")
 
-#tidy data 
-NewCasesTidy <- roll_avg %>% 
-  # pivot longer
-  tidyr::pivot_longer(names_to = "new_conf_av_key", 
-                      values_to = "new_conf_av_value", 
-                      cols = c(case_03da,
-                               case_07da)) %>% 
-  # better labels for printing
-  dplyr::mutate(new_conf_av_key = dplyr::case_when(
-    new_conf_av_key == "case_03da" ~ "3-day new confirmed cases",
-    new_conf_av_key == "case_07da" ~ "7-day new confirmed cases",
-    TRUE ~ NA_character_)) %>% 
-  # reduce vars
-  dplyr::select(time, 
-                date, 
-                cities, 
-                Province_State,
-                new_conf_av_value, 
-                new_conf_av_key)
-
-save(NewCasesTidy, file="NewCasesTidy.Rdata")
-
-#-------------------------------------------------#
-###############Deaths ####################
-#-------------------------------------------------#
-
+#------------------------------------------------------------------------------#
+                        ###############Deaths ####################
+#------------------------------------------------------------------------------#
 
 county_deaths1<-county_deaths%>%
   filter(FIPS %in% cities)%>%
@@ -757,7 +732,6 @@ county_deaths1<-county_deaths%>%
            Admin2=="Marion"~"2020-08-14",
            Admin2=="Charleston"~"2020-05-15"),
          eviction_end=as.Date(eviction_end, "%Y-%m-%d"),
-         #create var that normalizes start date (1st treat day 1 = day 1 for all cities)
          #create var that normalizes start date (1st treat day 1 = day 1 for all cities)
          time= as.numeric(difftime(date,treat_start, units = c("days"))),
          stay_days= as.integer(difftime(date,stay_start, units = c("days"))), 
@@ -1072,6 +1046,9 @@ save(roll_avg_death, file="roll_avg_death.Rdata")
 
 #-----------------------------------------------------------#
 #SENSITIVITY ANALYSIS 
+#NOTE: We do not include this analysis in the article-- it's just an ITS, so weaker than DID
+#but we do show the figure based on this dataset.
+
 #Dates using dates of reopenings for each city (not our actual study periods)
 #limit cases to counties of interest and time periods of study period
 county_cases_sens1<-county_cases%>%
@@ -1079,7 +1056,7 @@ county_cases_sens1<-county_cases%>%
   #create treatment/control var 
   mutate(treat1=case_when(Admin2%in% c("Philadelphia", "Marion", "San Francisco", "Milwaukee")~1, 
                           Admin2%in% c("Maricopa","Travis", "Bexar", "Dallas",	
-                                       "Harris", "Fulton", "Charleston", "Miami-Dade")~0))%>%
+                                       "Harris", "Fulton", "Charleston")~0))%>%
   dplyr::select(UID, FIPS, Admin2, Province_State, '4/1/20':'12/1/20', treat1)%>%
   pivot_longer(!c(UID, FIPS, Admin2, Province_State, treat1), names_to="date", values_to="cases")%>%         
   #get daily count by taking difference from one day to next
@@ -1092,63 +1069,136 @@ county_cases_sens1<-county_cases%>%
                                     FIPS==48113~"Dallas", 
                                     FIPS==48201~"Houston", 
                                     FIPS==48029~ "San Antonio", 
-                                    FIPS==13121~"Atlanta"), 
+                                    FIPS==13121~"Atlanta")))%>%
+  group_by(FIPS)%>%
+  mutate(daily_count = c(cases[1],diff(cases)))%>%
+  mutate(date=as.Date(date, "%m/%d/%y"),
+         treat_start=case_when(Admin2=="Fulton"~ "2020-04-27",
+                               Admin2=="Philadelphia"~"2020-09-08",
+                               Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar", "Maricopa")~ "2020-05-01",
+                               Admin2=="Milwaukee"~"2020-06-05", 
+                               Admin2=="San Francisco"~"2020-09-30", 
+                               Admin2=="Marion"~"2020-06-01",
+                               Admin2=="Charleston"~"2020-05-11"),
          treat_start=as.Date(treat_start, "%Y-%m-%d"), 
-              stay_start=case_when(
-                                      #Atlanta
-                                      Admin2=="Fulton"~ "2020-05-01",
-                                      Admin2=="Philadelphia"~"2020-06-05",
-                                      Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar")~ "2020-05-01",
-                                      Admin2=="Maricopa" ~"2020-05-16",
-                                      Admin2=="San Francisco"~"2020-05-14", 
-                                      Admin2=="Milwaukee"~"2020-05-13", 
-                                      #indianapolis
-                                      Admin2=="Marion"~"2020-05-18",
-                                      Admin2=="Charleston"~"2020-05-04"), 
-                                    stay_start=as.Date(stay_start, "%Y-%m-%d"), 
-                                    #create mask mandate var     
-                                    mask_start=case_when(#Atlanta
-                                      Admin2=="Fulton"~ "2020-07-08",
-                                      Admin2=="Philadelphia"~"2020-07-01",
-                                      Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar")~ "2020-07-03",
-                                      #phoenix
-                                      Admin2=="Maricopa"~"2020-06-20",
-                                      Admin2=="San Francisco"~"2020-04-17", 
-                                      Admin2=="Milwaukee"~"2020-05-14", 
-                                      #indianapolis
-                                      Admin2=="Marion"~"2020-07-09",
-                                      Admin2=="Charleston"~"2020-07-01"), 
-                                    mask_start=as.Date(mask_start, "%Y-%m-%d"), 
-                                    #create end of eviction ban
-                                    eviction_start=case_when(
-                                      #Atlanta
-                                      Admin2=="Fulton"~ "2020-03-16",
-                                      Admin2=="Philadelphia"~"2020-03-18",
-                                      Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar", "Maricopa")~ "2020-03-19",
-                                      Admin2=="San Francisco"~"2020-03-01", 
-                                      Admin2=="Milwaukee"~"2020-03-27", 
-                                      #indianapolis
-                                      Admin2=="Marion"~"2020-03-19",
-                                      Admin2=="Charleston"~"2020-03-19"),
-                                    eviction_start=as.Date(eviction_start, "%Y-%m-%d"),
-                                    #var for end of eviction ban           
-                                    eviction_end=case_when(
-                                      #Atlanta
-                                      Admin2=="Fulton"~ "2020-10-31",
-                                      Admin2=="Philadelphia"~"2020-12-31",
-                                      Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar", "Maricopa")~ "2020-05-19",
-                                      Admin2=="San Francisco"~"2020-12-31", 
-                                      Admin2=="Milwaukee"~"2020-05-27", 
-                                      #indianapolis
-                                      Admin2=="Marion"~"2020-08-14",
-                                      Admin2=="Charleston"~"2020-05-15"),
-                                    eviction_end=as.Date(eviction_end, "%Y-%m-%d"),
-                                    #create var that normalizes start date (1st treat day 1 = day 1 for all cities)
-                                    #create var that normalizes start date (1st treat day 1 = day 1 for all cities)
-                                    time= as.numeric(difftime(date,treat_start, units = c("days"))),
-                                    stay_days= as.integer(difftime(date,stay_start, units = c("days"))), 
-                                    mask_days=as.integer(difftime(date,mask_start, units = c("days"))), 
-                                    evict_days=as.integer(difftime(date,eviction_start, units = c("days"))),
-                                    evict_days_end=as.integer(difftime(date,eviction_end, units=c("days")))))
-                          county_cases_sens1$daily_count[county_cases_sens1$daily_count< 0] <- 0
-                          
+         stay_start=case_when(  #Atlanta
+           Admin2=="Fulton"~ "2020-05-01",
+           Admin2=="Philadelphia"~"2020-06-05",
+           Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar")~ "2020-05-01",
+           Admin2=="Maricopa" ~"2020-05-16",
+           Admin2=="San Francisco"~"2020-05-14", 
+           Admin2=="Milwaukee"~"2020-05-13", 
+           #indianapolis
+           Admin2=="Marion"~"2020-05-18",
+           Admin2=="Charleston"~"2020-05-04"), 
+         stay_start=as.Date(stay_start, "%Y-%m-%d"), 
+         #create mask mandate var     
+         mask_start=case_when(#Atlanta
+           Admin2=="Fulton"~ "2020-07-08",
+           Admin2=="Philadelphia"~"2020-07-01",
+           Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar")~ "2020-07-03",
+           #phoenix
+           Admin2=="Maricopa"~"2020-06-20",
+           Admin2=="San Francisco"~"2020-04-17", 
+           Admin2=="Milwaukee"~"2020-05-14", 
+           #indianapolis
+           Admin2=="Marion"~"2020-07-09",
+           Admin2=="Charleston"~"2020-07-01"), 
+         mask_start=as.Date(mask_start, "%Y-%m-%d"), 
+         #create end of eviction ban
+         eviction_start=case_when(
+           #Atlanta
+           Admin2=="Fulton"~ "2020-03-16",
+           Admin2=="Philadelphia"~"2020-03-18",
+           Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar", "Maricopa")~ "2020-03-19",
+           Admin2=="San Francisco"~"2020-03-01", 
+           Admin2=="Milwaukee"~"2020-03-27", 
+           #indianapolis
+           Admin2=="Marion"~"2020-03-19",
+           Admin2=="Charleston"~"2020-03-19"),
+         eviction_start=as.Date(eviction_start, "%Y-%m-%d"),
+         #var for end of eviction ban           
+         eviction_end=case_when(
+           #Atlanta
+           Admin2=="Fulton"~ "2020-10-31",
+           Admin2=="Philadelphia"~"2020-12-31",
+           Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar", "Maricopa")~ "2020-05-19",
+           Admin2=="San Francisco"~"2020-12-31", 
+           Admin2=="Milwaukee"~"2020-05-27", 
+           #indianapolis
+           Admin2=="Marion"~"2020-08-14",
+           Admin2=="Charleston"~"2020-05-15"),
+         eviction_end=as.Date(eviction_end, "%Y-%m-%d"),
+         #create var that normalizes start date (1st treat day 1 = day 1 for all cities)
+         time= as.numeric(difftime(date,treat_start, units = c("days"))),
+         stay_days= as.integer(difftime(date,stay_start, units = c("days"))), 
+         mask_days=as.integer(difftime(date,mask_start, units = c("days"))), 
+         evict_days=as.integer(difftime(date,eviction_start, units = c("days"))),
+         evict_days_end=as.integer(difftime(date,eviction_end, units=c("days"))))
+county_cases_sens1$daily_count[county_cases_sens1$daily_count< 0] <- 0
+
+
+#14 day lag 
+county_cases_sens2<-county_cases_sens1%>%
+  mutate(pre_post=ifelse(time>=14,1,0), 
+         at_home=ifelse(stay_days<=14, 1, 0), 
+         mask_mandate=ifelse(mask_days>=14, 1,0), 
+         #including start and end dates to ensure we only code as 1 during time eviction ban was active
+         evict_start=ifelse(evict_days>=14, 1, 0), 
+         evict_end=ifelse(evict_days_end>=14, 1, 0), 
+         evict_ban=case_when(evict_start==1 & evict_end==0 ~1, 
+                             (evict_start==0 & evict_end==1)|(evict_start==1 & evict_end==1)|(evict_start==0 & evict_end==0) ~0))%>% 
+  filter(time>=-28 & time<=42 )%>%
+  #add in population counts
+  left_join(population1)%>%
+  #create rates  
+  mutate(case_rate=daily_count/pop*100000)
+
+
+#9 day lag +  6 weeks after
+county_cases_sens3<-county_cases_sens1%>%
+  mutate(pre_post=ifelse(time>=9,1,0), 
+         at_home=ifelse(stay_days<=9, 1, 0), 
+         mask_mandate=ifelse(mask_days>=9, 1,0), 
+         #including start and end dates to ensure we only code as 1 during time eviction ban was active
+         evict_start=ifelse(evict_days>=9, 1, 0), 
+         evict_end=ifelse(evict_days_end>=9, 1, 0), 
+         evict_ban=case_when(evict_start==1 & evict_end==0 ~1, 
+                             (evict_start==0 & evict_end==1)|(evict_start==1 & evict_end==1)|(evict_start==0 & evict_end==0) ~0))%>% 
+  filter(time>=-28 & time<=64 )%>%
+  #add in population counts
+  left_join(population1)%>%
+  #create rates  
+  mutate(case_rate=daily_count/pop*100000)
+
+
+#calculate moving average 
+roll_avg_sens2 <- county_cases_sens2 %>%
+  dplyr::arrange(desc(cities)) %>% 
+  dplyr::group_by(cities) %>% 
+  dplyr::mutate(case_03da = zoo::rollmean(daily_count, k = 3, fill = NA),
+                case_05da = zoo::rollmean(daily_count, k = 5, fill = NA),
+                case_07da = zoo::rollmean(daily_count, k = 7, fill = NA),
+                case_15da = zoo::rollmean(daily_count, k = 15, fill = NA),
+                case_21da = zoo::rollmean(daily_count, k = 21, fill = NA), 
+                caserate_07da = zoo::rollmean(case_rate, k = 7, fill = NA)) %>% 
+  dplyr::ungroup()
+
+
+#repeated for the 9 day lag + 64 days post
+roll_avg_sens3 <- county_cases_sens3 %>%
+  dplyr::arrange(desc(cities)) %>% 
+  dplyr::group_by(cities) %>% 
+  dplyr::mutate(case_03da = zoo::rollmean(daily_count, k = 3, fill = NA),
+                case_05da = zoo::rollmean(daily_count, k = 5, fill = NA),
+                case_07da = zoo::rollmean(daily_count, k = 7, fill = NA),
+                case_15da = zoo::rollmean(daily_count, k = 15, fill = NA),
+                case_21da = zoo::rollmean(daily_count, k = 21, fill = NA), 
+                caserate_07da = zoo::rollmean(case_rate, k = 7, fill = NA)) %>% 
+  dplyr::ungroup()
+
+save(county_cases_sens3, 
+     county_cases_sens2, 
+     roll_avg_sens2, 
+     roll_avg_sens3, file="sens2_all.Rdata")
+
