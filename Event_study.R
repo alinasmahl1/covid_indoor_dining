@@ -18,6 +18,7 @@ library(sandwich)
 library(MASS)
 library(lmtest)
 library(emmeans)
+select<-dplyr::select
 load("daily_count.Rdata")
 
 
@@ -207,17 +208,46 @@ save(event_model3, file="event_model3.Rdata")
 #base model 
 #just weeks
 #pretty sure adding each week_prio and weeks_post is the least efficient way to add to regression, but couldn't figure out alterntive. 
-summary(mod_e1<-glm.nb(daily_count~weeks_prior_1+ weeks_prior_2+ weeks_prior_3+weeks_prior_4 + weeks_post_1 +weeks_post_2 + weeks_post_3+ weeks_post_4 +weeks_post_5 +weeks_post_6+ weeks_post_7+weeks_post_8 + offset(log(pop/100000)),  data=event_model3))
+f<-as.formula(paste0("daily_count~", 
+                     paste("weeks_prior_", 1:4, collapse="+", sep=""), "+",
+                     paste("weeks_post_", 1:8, collapse="+", sep=""), 
+                     "+offset(log(pop/100000))"))
+summary(mod_e1<-glm.nb(f,  data=event_model3))
 stargazer(mod_e1, apply.coef = exp, type='text')
 #robust standard errors clustered at city level 
-rse_mod__e1<-exp(coeftest(mod_e1, vcov = vcovHC,  cluster= ~cities))
+rse_mod_e1<-exp(coeftest(mod_e1, vcov = vcovHC,  cluster= ~cities))
 rci_mod_e1<-exp(coefci(mod_e1, vcov = vcovHC,  cluster= ~cities))
+all_mod_e1<-bind_cols(rownames(rse_mod_e1), as.data.frame(rse_mod_e1[,1]), as.data.frame(rci_mod_e1[,1:2])) %>% 
+  slice(-1) %>% 
+  rename(variable=1, est=2, lci=3, uci=4) %>% 
+  mutate(time=as.numeric(gsub("weeks|prior|post|_", "", variable)),
+         time=time*ifelse(grepl("post", variable), 1, -1)) %>% 
+  select(time, est, lci, uci) %>% 
+  add_row(time=0, est=1, lci=NA, uci=NA) %>% 
+  arrange(time)
+ggplot(all_mod_e1, aes(x=time, y=est)) +
+  geom_ribbon(aes(ymin=lci, ymax=uci))+
+  geom_line() +
+  theme_bw()
 
 #adding city fixed effects
 #think I can just add in
 summary(mod_e2<-glm.nb(daily_count~weeks_prior_1+ weeks_prior_2+ weeks_prior_3+weeks_prior_4 + weeks_post_1 +weeks_post_2 + weeks_post_3+ weeks_post_4 +weeks_post_5 +weeks_post_6+ weeks_post_7+weeks_post_8  + cities + offset(log(pop/100000)),  data=event_model3))
 rse_mod_e2<-exp(coeftest(mod_e2, vcov = vcovHC,  cluster= ~cities))
 rci_mod_e2<-exp(coefci(mod_e2, vcov = vcovHC,  cluster= ~cities))
+all_mod_e2<-bind_cols(rownames(rse_mod_e2), as.data.frame(rse_mod_e2[,1]), 
+                      as.data.frame(rci_mod_e2[,1:2])) %>% 
+  slice(-1) %>% 
+  rename(variable=1, est=2, lci=3, uci=4) %>% 
+  mutate(time=as.numeric(gsub("weeks|prior|post|_", "", variable)),
+         time=time*ifelse(grepl("post", variable), 1, -1)) %>% 
+  select(time, est, lci, uci) %>% 
+  add_row(time=0, est=1, lci=NA, uci=NA) %>% 
+  arrange(time)
+ggplot(all_mod_e2, aes(x=time, y=est)) +
+  geom_ribbon(aes(ymin=lci, ymax=uci))+
+  geom_line() +
+  theme_bw()
 
 #adding calendar week fixed effects 
 summary(mod_e3<-glm.nb(daily_count~weeks_prior_1+ weeks_prior_2+ weeks_prior_3+weeks_prior_4 + weeks_post_1 +weeks_post_2 + weeks_post_3+ weeks_post_4 +weeks_post_5 +weeks_post_6+ weeks_post_7+weeks_post_8  + factor(cal_week) + factor(cities) + offset(log(pop/100000)),  data=event_model3))
