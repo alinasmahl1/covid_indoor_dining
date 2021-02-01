@@ -11,7 +11,7 @@ library(lubridate)
 
 #IMPORT COUNTY LEVEL DATA
 county_cases<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv")
-county_deaths<-fread("data/time_series_covid19_deaths_US.csv")
+county_deaths<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv")
 #limit dataset to our counties/cities-- select cities wherever available 
 # for austin- city is code 48015 and coutny is 48453-- using county (bc don't trust city)
 cities<-c(42101,18097,6075, 55079, 4013, 48453, 48113, 48201,  48029, 13121,45019)
@@ -368,14 +368,7 @@ event_model$time= as.numeric(difftime(event_model$date,event_model$treat_start, 
 event_model$weeks= as.integer(difftime(event_model$date,event_model$treat_start, units = c("weeks"), round()))
 
 # NOTE: OUR CONTROL HERE IS REOPENING!! (not staying closed)
-
-#not efficient but dif date uses calendar weeks, so wasn't working
-# our control here is re-opening 
-
-event_model1<-event_model%>%
-  mutate(weeks1=as.factor(floor(time/7)+1), 
-  stay_week=as.factor(floor(stay_days/7)))
-                      
+                     
 #Event model sensitivity 2: limit study period to 4 weeks pre and 8 weeks (2 weeks lag + 6 weeks) (or 6 pre and 6 post)
 event_model1<-event_model%>%
   filter(time>=-28 & time<=56)%>%
@@ -589,12 +582,9 @@ event_model3<-event_model%>%
   dummy_cols(select_columns = 'weeks_prior')%>%
   dummy_cols(select_columns='weeks_post')
 
-  
-
 save(event_model1,
      event_model2, 
      event_model3, file="event_model1.Rdata")
-
 
 #event model for graphing 
 event_model2m<-event_model%>%

@@ -18,6 +18,8 @@ library(MASS)
 library(lmtest)
 library(emmeans)
 library(inauguration)
+library(foreign)
+
 #import data files
 load("daily_count.Rdata")
 load("event_model1.Rdata")
@@ -29,14 +31,12 @@ load("county_cases_sens2.Rdata")
 load("daily_count_2a.Rdata")
 load("sens2_all.Rdata")
 
-library(foreign)
+# export county_cases2 for stata (for marginal mean estimates)
 write.dta(county_cases2,"county_cases2.dta")
 ####################################################
-#Appendix Figure 1
+#Figure 1
 ####################################################
-#figures of each city w/ event + cases 
-#PHILADELPHIA 
-
+#figure of all cities w/ opening dates
 figure1<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv") %>% 
   dplyr::select(UID, FIPS, Admin2,'3/1/20':'11/1/20')%>%
   pivot_longer(!c(UID, FIPS, Admin2), names_to="date", values_to="cases")%>%
@@ -100,8 +100,6 @@ state_allowed=as.Date(state_allowed, "%Y-%m-%d"),
                         Admin2=="Marion"~"2020-06-01"), 
 city_opened=as.Date(city_opened, "%Y-%m-%d"))
 
-levels(annotation1$cities)
-
 pdf(file="results/figure_1.pdf")
 
 figure1<-figure1%>%
@@ -122,7 +120,7 @@ figure1
 dev.off()
 
 ####################################################
-#Figure 1:Parallel trends assumption 
+#Figure 2:Parallel trends assumption 
 ####################################################
 
 #find means by treat and week
@@ -150,7 +148,8 @@ rate_mean1 <- ggplot(data=means, aes(x=time, y=wt_meanrate, color=factor(treat1,
 
 rate_mean1
 dev.off()
-
+###############################################################################
+#APPENDIX FIGURE 2
 #final figure for deaths 
 means_death <- roll_avg_death %>% 
   group_by(treat1, time) %>% 
@@ -159,7 +158,7 @@ means_death <- roll_avg_death %>%
             wt_ratemean=weighted.mean(deathrate_07da, pop),
             ratemean=mean(deathrate_07da))
 
-pdf(file="results/figure_2b.pdf")
+pdf(file="results/figure_2b_appendix.pdf")
 rate_mean1_death <- ggplot(data=means_death, aes(x=time, y=wt_ratemean, color=factor(treat1, labels = c("Comparison", "Treatment")))) +
   geom_line(size=1.5)+
   geom_vline(xintercept = 35)+
@@ -173,8 +172,8 @@ rate_mean1_death <- ggplot(data=means_death, aes(x=time, y=wt_ratemean, color=fa
 rate_mean1_death
 
 dev.off()
-
-
+###############################################################################
+#Appendix Figure 1
 #map the sensitivity analysis w/ date of opening across cities
 means_sens2 <- roll_avg_sens2 %>% 
   group_by(treat1, time) %>% 
@@ -383,12 +382,8 @@ rse_mod_s2f2
 #changes in lag periods  
 #just interaction models
 models_sen <- list(mod_s2a1,  mod_s2b1, mod_s2c1, mod_s2d1)
-robust_se_2<-list(rse_mod_s2a1, rse_mod_s2a2, rse_mod_s2b1, rse_mod_s2b2, rse_mod_s2c1, rse_mod_s2c2, rse_mod_s2d1, rse_mod_s2d2)
-robust_ci_2<-list(rci_mod_s2a1, rci_mod_s2a2, rci_mod_s2b1, rci_mod_s2b2, rci_mod_s2c1, rci_mod_s2c2, rci_mod_s2d1, rci_mod_s2d2)
-
 #just final models
 models_sen1 <- list(mod_s2a2, mod_s2b2, mod_s2c2, mod_s2d2)
-
 
 stargazer(models_sen, apply.coef=exp, type = "text", ci = TRUE, title="Sensitivity_change in lags", out="results/table_1sa_cases.txt")
 stargazer(models_sen1, apply.coef=exp, type = "text", ci = TRUE, title="Sensitivity_change in lags_full model", out="results/table_1sa2_cases.txt")
@@ -397,7 +392,8 @@ stargazer(models_sen1, apply.coef=exp, type = "text", ci = TRUE, title="Sensitiv
 models_sen2 <- list(mod_s2e1, mod_s2e2, mod_s2f1,mod_s2f2)
 robust_se_2b<-list(rse_mod_s2e1, rse_mod_s2e2, rse_mod_s2f1, rse_mod_s2f2)
 robust_ci_2b<-list(rci_mod_s2e1, rci_mod_s2e2, rci_mod_s2f1, rci_mod_s2f2)
-
+robust_se_2b
+robust_ci_2b
 stargazer(models_sen2, apply.coef=exp, type = "text", ci = TRUE, title="Sensitivity_period, BCHC", out="results/table_1sb_cases.txt")
 
 
@@ -490,11 +486,6 @@ rci_mod_nb3c
 modelsdeath <- list(mod_nb1, mod_nb1off, mod_nb2off, mod_nb3)
 modelsdeath1<-list(mod_nb3a, mod_nb3b, mod_nb3c)
 
-robust_se_death<-list(rse_mod_nb1, rse_mod_nb1off, rse_mod_nb2off, rse_mod_nb3)
-robust_ci_death<-list(rci_mod_nb1, rci_mod_nb1off, rci_mod_nb2off, rci_mod_nb3)
-robust_se_death<-list(rse_mod_nb3a, rse_mod_nb3b, rse_mod_nb3c)
-robust_ci_death<-list(rci_mod_nb3a, rci_mod_nb3b, rci_mod_nb3c)
-
 stargazer(modelsdeath, apply.coef=exp, type = "text", title="Base Models", out="results/table1deaths.txt")
 stargazer(modelsdeath1, apply.coef=exp, type="text", title="Models w/ NPIs", out="results/table1bdeaths.txt")
 
@@ -510,7 +501,6 @@ rci_mod_ds1b<-exp(coefci(mod_ds1b, vcov = vcovHC,  cluster= ~cities))
 rci_mod_ds1b
 #sensitivity analysis 2: 
 #remove lag for other NPIs
-#LOOK INTO THIS. PRE_post and treat _pre post dropping out
 summary(mod_ds1c<-glm.nb(daily_deaths~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_deaths2c))
 stargazer(mod_ds1c, apply.coef=exp, type="text")
 rse_mod_ds1c<-exp(coeftest(mod_ds1c, vcov = vcovHC,  cluster= ~cities))
