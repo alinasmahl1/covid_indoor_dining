@@ -30,6 +30,7 @@ load("daily_count_deaths.Rdata")
 load("county_cases_sens2.Rdata")
 load("daily_count_2a.Rdata")
 load("sens2_all.Rdata")
+cities<-c(42101,18097,6075, 55079, 4013, 48453, 48113, 48201,  48029, 13121,45019)
 
 # export county_cases2 for stata (for marginal mean estimates)
 write.dta(county_cases2,"county_cases2.dta")
@@ -37,7 +38,7 @@ write.dta(county_cases2,"county_cases2.dta")
 #Figure 1
 ####################################################
 #figure of all cities w/ opening dates
-figure1<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv") %>% 
+figure1_data<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv") %>% 
   dplyr::select(UID, FIPS, Admin2,'3/1/20':'11/1/20')%>%
   pivot_longer(!c(UID, FIPS, Admin2), names_to="date", values_to="cases")%>%
   filter(FIPS %in% cities)%>%
@@ -102,7 +103,7 @@ city_opened=as.Date(city_opened, "%Y-%m-%d"))
 
 pdf(file="results/figure_1.pdf")
 
-figure1<-figure1%>%
+figure1<-figure1_data%>%
   ggplot(aes(x=date, y=cases2)) + 
   geom_line()+
   scale_linetype_manual(values=c(1, 2, 3))+
@@ -193,7 +194,7 @@ rate_mean_sens2 <- ggplot(data=means_sens2, aes(x=time, y=wt_meanrate, color=fac
        color="Treat & Comparison",
        y = "New case rate per 100,000",
        x = "Days Since Reopening ") +
-  coord_cartesian(ylim = c(0, 15))+
+  coord_cartesian(ylim = c(0, 17.5))+
   theme(legend.position="bottom") +
   scale_color_manual(values=c("#5445b1", "#cd3341"))
 
@@ -270,12 +271,6 @@ rse_mod_nb3c
 #compare models 
 models <- list(mod_nb1, mod_nb1off, mod_nb2off, mod_nb3)
 models1<-list(mod_nb3a, mod_nb3b, mod_nb3c)
-
-#this doesn't really work- fix it!
-robust_se_1<-list(rse_mod_nb1, rse_mod_nb1off, rse_mod_nb2off, rse_mod_nb3)
-robust_se_2<-list(rse_mod_nb3a, rse_mod_nb3b, rse_mod_nb3c)
-robust_ci_1<-list(rci_mod_nb1, rci_mod_nb1off, rci_mod_nb2off, rci_mod_nb2off)
-robust_ci_2<-list(rci_mod_nb3a, rci_mod_nb3b, rci_mod_nb3c)
 
 stargazer(models, apply.coef=exp, type = "text", ci = TRUE, title="Base Models", out="results/table1.txt")
 stargazer(models1, apply.coef=exp, type="text", ci = TRUE, title="Models w/ NPIs", out="results/table1a.txt")
@@ -378,6 +373,13 @@ rse_mod_s2f2<-exp(coeftest(mod_s2f2, vcov = vcovHC,  cluster= ~cities))
 rci_mod_s2f2<-exp(coefci(mod_s2f2, vcov = vcovHC,  cluster= ~cities))
 rci_mod_s2f2
 rse_mod_s2f2
+
+##remove SF 
+summary(mod_s2g2<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_end + offset(log(pop/100000)),  data=filter(county_cases2, Admin2!="San Francisco")))
+stargazer(mod_s2g2, apply.coef = exp, type='text')
+
+
+
 ##model output 
 #changes in lag periods  
 #just interaction models
@@ -390,10 +392,6 @@ stargazer(models_sen1, apply.coef=exp, type = "text", ci = TRUE, title="Sensitiv
 
 #model output additional sensitivity analysis 
 models_sen2 <- list(mod_s2e1, mod_s2e2, mod_s2f1,mod_s2f2)
-robust_se_2b<-list(rse_mod_s2e1, rse_mod_s2e2, rse_mod_s2f1, rse_mod_s2f2)
-robust_ci_2b<-list(rci_mod_s2e1, rci_mod_s2e2, rci_mod_s2f1, rci_mod_s2f2)
-robust_se_2b
-robust_ci_2b
 stargazer(models_sen2, apply.coef=exp, type = "text", ci = TRUE, title="Sensitivity_period, BCHC", out="results/table_1sb_cases.txt")
 
 

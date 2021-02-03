@@ -8,6 +8,8 @@ library(data.table)
 library(tidyverse)
 library(tidycensus)
 library(lubridate)
+library(fastDummies)
+library(plm)
 
 #IMPORT COUNTY LEVEL DATA
 county_cases<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv")
@@ -82,15 +84,18 @@ county_cases1<-county_cases%>%
            #Atlanta
            Admin2=="Fulton"~ "2020-05-01",
            Admin2=="Philadelphia"~"2020-06-05",
-           Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar")~ "2020-05-01",
+           Admin2=="Travis"~"2020-07-15",
+           Admin2=="Dallas"~"2020-05-15",
+           Admin2=="Harris"~ "2020-05-20",
+           Admin2=="Bexar"~ "2020-06-05",
            Admin2=="Maricopa" ~"2020-05-16",
            #San Francisco
            Admin2=="San Francisco"~"2020-05-14", 
            #Milwaukee
-           Admin2=="Milwaukee"~"2020-05-13", 
+           Admin2=="Milwaukee"~"2020-06-05", 
            #indianapolis
            Admin2=="Marion"~"2020-05-18",
-           Admin2=="Charleston"~"2020-05-04"), 
+           Admin2=="Charleston"~"2020-05-31"), 
          stay_start=as.Date(stay_start, "%Y-%m-%d"), 
          #create mask mandate var     
          mask_start=case_when(#Atlanta
@@ -306,13 +311,18 @@ event_model<-county_cases1%>%
       #Atlanta
       Admin2=="Fulton"~ "2020-05-01",
       Admin2=="Philadelphia"~"2020-06-05",
-      Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar")~ "2020-05-01",
+      Admin2=="Travis"~"2020-07-15",
+      Admin2=="Dallas"~"2020-05-15",
+      Admin2=="Harris"~ "2020-05-20",
+      Admin2=="Bexar"~ "2020-06-05",
       Admin2=="Maricopa" ~"2020-05-16",
+      #San Francisco
       Admin2=="San Francisco"~"2020-05-14", 
-      Admin2=="Milwaukee"~"2020-05-09", 
+      #Milwaukee
+      Admin2=="Milwaukee"~"2020-06-05", 
       #indianapolis
-      Admin2=="Marion"~"2020-05-13",
-      Admin2=="Charleston"~"2020-05-04"), 
+      Admin2=="Marion"~"2020-05-18",
+      Admin2=="Charleston"~"2020-05-31"), 
     stay_start=as.Date(stay_start, "%Y-%m-%d"), 
     #create mask mandate var     
     mask_start=case_when(#Atlanta
@@ -677,13 +687,18 @@ county_deaths1<-county_deaths%>%
            #Atlanta
            Admin2=="Fulton"~ "2020-05-01",
            Admin2=="Philadelphia"~"2020-06-05",
-           Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar")~ "2020-05-01",
+           Admin2=="Travis"~"2020-07-15",
+           Admin2=="Dallas"~"2020-05-15",
+           Admin2=="Harris"~ "2020-05-20",
+           Admin2=="Bexar"~ "2020-06-05",
            Admin2=="Maricopa" ~"2020-05-16",
+           #San Francisco
            Admin2=="San Francisco"~"2020-05-14", 
-           Admin2=="Milwaukee"~"2020-05-13", 
-           #indianapoli
+           #Milwaukee
+           Admin2=="Milwaukee"~"2020-06-05", 
+           #indianapolis
            Admin2=="Marion"~"2020-05-18",
-           Admin2=="Charleston"~"2020-05-04"), 
+           Admin2=="Charleston"~"2020-05-31"),
          stay_start=as.Date(stay_start, "%Y-%m-%d"), 
          #create mask mandate var     
          mask_start=case_when(#Atlanta
@@ -858,13 +873,18 @@ event_model_death<-county_deaths1%>%
       #Atlanta
       Admin2=="Fulton"~ "2020-05-01",
       Admin2=="Philadelphia"~"2020-06-05",
-      Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar")~ "2020-05-01",
+      Admin2=="Travis"~"2020-07-15",
+      Admin2=="Dallas"~"2020-05-15",
+      Admin2=="Harris"~ "2020-05-20",
+      Admin2=="Bexar"~ "2020-06-05",
       Admin2=="Maricopa" ~"2020-05-16",
+      #San Francisco
       Admin2=="San Francisco"~"2020-05-14", 
-      Admin2=="Milwaukee"~"2020-05-13", 
+      #Milwaukee
+      Admin2=="Milwaukee"~"2020-06-05", 
       #indianapolis
       Admin2=="Marion"~"2020-05-18",
-      Admin2=="Charleston"~"2020-05-04"), 
+      Admin2=="Charleston"~"2020-05-31"), 
     stay_start=as.Date(stay_start, "%Y-%m-%d"), 
     #create mask mandate var     
     mask_start=case_when(#Atlanta
@@ -1072,15 +1092,21 @@ county_cases_sens1<-county_cases%>%
                                Admin2=="Charleston"~"2020-05-11"),
          treat_start=as.Date(treat_start, "%Y-%m-%d"), 
          stay_start=case_when(  #Atlanta
+           #Atlanta
            Admin2=="Fulton"~ "2020-05-01",
            Admin2=="Philadelphia"~"2020-06-05",
-           Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar")~ "2020-05-01",
+           Admin2=="Travis"~"2020-07-15",
+           Admin2=="Dallas"~"2020-05-15",
+           Admin2=="Harris"~ "2020-05-20",
+           Admin2=="Bexar"~ "2020-06-05",
            Admin2=="Maricopa" ~"2020-05-16",
+           #San Francisco
            Admin2=="San Francisco"~"2020-05-14", 
-           Admin2=="Milwaukee"~"2020-05-13", 
+           #Milwaukee
+           Admin2=="Milwaukee"~"2020-06-05", 
            #indianapolis
            Admin2=="Marion"~"2020-05-18",
-           Admin2=="Charleston"~"2020-05-04"), 
+           Admin2=="Charleston"~"2020-05-31"), 
          stay_start=as.Date(stay_start, "%Y-%m-%d"), 
          #create mask mandate var     
          mask_start=case_when(#Atlanta
