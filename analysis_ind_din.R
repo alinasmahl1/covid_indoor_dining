@@ -2,6 +2,7 @@
 
 #*Version 1 started Nov 30, 2020 by Alina Schnake-Mahl
 #*Descriptive and regression analysis 
+rm(list=ls())
 
 #Import all libraries 
 library(ggplot2)
@@ -23,6 +24,7 @@ load("roll_avg.Rdata")
 load("NewCasesTidy.Rdata")
 load("roll_avg_death.Rdata")
 load("daily_count_deaths.Rdata")
+load("cities.Rdata")
 
 #Plot cases over time by city 
 t<-county_cases2%>%

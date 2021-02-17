@@ -1,0 +1,35 @@
+fips,state,county,county_name,bchc,city_name,state_name,abrv,loc,level,comparable
+48453,48,453,Travis County,1,Austin,Texas,TX,"Austin, TX",county,1
+24510,24,510,Baltimore city,1,Baltimore,Maryland,MD,"Baltimore, MD",county,1
+25025,25,25,Suffolk County,1,Boston,Massachusetts,MA,"Boston, MA",county,1
+37119,37,119,Mecklenburg County,1,Charlotte,North Carolina,NC,"Charlotte, NC",county,1
+17031,17,31,Cook County,1,Chicago,Illinois,IL,"Chicago, IL",county,0
+39035,39,35,Cuyahoga County,1,Cleveland,Ohio,OH,"Cleveland, OH",county,0
+39049,39,49,Franklin County,1,Columbus,Ohio,OH,"Columbus, OH",county,0
+48113,48,113,Dallas County,1,Dallas,Texas,TX,"Dallas, TX",county,0
+8031,8,31,Denver County,1,Denver,Colorado,CO,"Denver, CO",county,1
+26163,26,163,Wayne County,1,Detroit,Michigan,MI,"Detroit, MI",county,0
+48439,48,439,Tarrant County,1,Fort Worth,Texas,TX,"Fort Worth, TX",county,0
+48201,48,201,Harris County,1,Houston,Texas,TX,"Houston, TX",county,0
+18097,18,97,Marion County,1,Indianapolis,Indiana,IN,"Indianapolis, IN",county,1
+29095,29,95,Jackson County,1,Kansas City,Missouri,MO,"Kansas City, MO",county,0
+32003,32,3,Clark County,1,Las Vegas,Nevada,NV,"Las Vegas, NV",county,0
+6037,6,37,Los Angeles County,1,Long Beach,California,CA,"Long Beach, CA",county,0
+6037,6,37,Los Angeles County,1,Los Angeles,California,CA,"Los Angeles, CA",county,0
+12086,12,86,Miami-Dade County,1,Miami,Florida,FL,"Miami, FL",county,0
+27053,27,53,Hennepin County,1,Minneapolis,Minnesota,MN,"Minneapolis, MN",county,0
+36047,36,47,Kings County,1,New York City,New York,NY,"New York City, NY",county,1
+36081,36,81,Queens County,1,New York City,New York,NY,"New York City, NY",county,1
+36061,36,61,New York County,1,New York City,New York,NY,"New York City, NY",county,1
+36005,36,5,Bronx County,1,New York City,New York,NY,"New York City, NY",county,1
+36085,36,85,Richmond County,1,New York City,New York,NY,"New York City, NY",county,1
+6001,6,1,Alameda County,1,Oakland,California,CA,"Oakland, CA",county,0
+42101,42,101,Philadelphia County,1,Philadelphia,Pennsylvania,PA,"Philadelphia, PA",county,1
+4013,4,13,Maricopa County,1,Phoenix,Arizona,AZ,"Phoenix, AZ",county,0
+41051,41,51,Multnomah County,1,Portland,Oregon,OR,"Portland, OR",county,1
+48029,48,29,Bexar County,1,San Antonio,Texas,TX,"San Antonio, TX",county,1
+6073,6,73,San Diego County,1,San Diego,California,CA,"San Diego, CA",county,0
+6075,6,75,San Francisco County,1,San Francisco,California,CA,"San Francisco, CA",county,1
+6085,6,85,Santa Clara County,1,San Jose,California,CA,"San Jose, CA",county,0
+53033,53,33,King County,1,Seattle,Washington,WA,"Seattle, WA",county,0
+11001,11,1,District of Columbia,1,Washington,District of Columbia,DC,"Washington, DC",county,1

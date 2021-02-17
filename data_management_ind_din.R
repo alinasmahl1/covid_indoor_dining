@@ -146,11 +146,14 @@ county_cases1<-county_cases%>%
          stay_days= as.integer(difftime(date,stay_start, units = c("days"))), 
          mask_days=as.integer(difftime(date,mask_start, units = c("days"))), 
          evict_days=as.integer(difftime(date,eviction_start, units = c("days"))),
-         evict_days_end=as.integer(difftime(date,eviction_end, units=c("days"))))
+         evict_days_end=as.integer(difftime(date,eviction_end, units=c("days"))), 
+         cal_week=factor(week(date)))
 county_cases1$daily_count[county_cases1$daily_count< 0] <- 0
 
 
 hist(county_cases1$daily_count)
+
+#can also use the county_cases1bchc data; available in the bchc_data.R file
 
 #option 1, using 14 day lag for all NPIs
 county_cases2<-county_cases1%>%
@@ -429,8 +432,6 @@ event_model1<-event_model%>%
   dummy_cols(select_columns = 'weeks_prior')%>%
   dummy_cols(select_columns='weeks_post')
 
-save(event_model1, file="event_model3.Rdata")
-
 #Sensitivity 1: period to 84 days (12 weeks) (10 before, 10 after + 2 week lag)
 event_model2<-event_model%>%
   mutate(weeks_prior=as.factor(case_when(
@@ -438,14 +439,6 @@ event_model2<-event_model%>%
     treat1==0 & time %in% c(-7:-14)~2, 
     treat1==0 & time %in% c(-15:-21)~3, 
     treat1==0 & time %in% c(-22:-28)~4, 
-    treat1==0 & time %in% c(-29:-35)~5, 
-    treat1==0 & time %in% c(-36:-42)~6, 
-    treat1==0 & time %in% c(-42:-49)~7, 
-    treat1==0 & time %in% c(-50:-56)~8, 
-    treat1==0 & time %in% c(-57:-63)~9, 
-    treat1==0 & time %in% c(-64:-70)~10, 
-    treat1==0 & time %in% c(-71:-77)~11, 
-    treat1==0 & time %in% c(-78:-84)~12, 
     TRUE~0)), 
     weeks_post=as.factor(case_when( 
       treat1==0 & time %in% c(0:7)~1, 
@@ -488,28 +481,18 @@ event_model2<-event_model%>%
       evict_days %in% c(15:21)~3, 
       evict_days %in% c(22:28)~4, 
       evict_days >28 ~5)))%>%
-  filter(time>-70 & time<84)%>%
+  filter(time>=-28 & time<84)%>%
   dummy_cols(select_columns = 'weeks_prior')%>%
   dummy_cols(select_columns='weeks_post')
 
-
-
 #sensitivity 2--no limit on NPI indicators
 event_model3<-event_model%>%
-  filter(time>-70 & time<84)%>%
+  filter(time>=-28 & time<84)%>%
   mutate(weeks_prior=as.factor(case_when(
     treat1==0 & time %in% c(-1:-7)~1,
     treat1==0 & time %in% c(-7:-14)~2, 
     treat1==0 & time %in% c(-15:-21)~3, 
     treat1==0 & time %in% c(-22:-28)~4, 
-    treat1==0 & time %in% c(-29:-35)~5, 
-    treat1==0 & time %in% c(-36:-42)~6, 
-    treat1==0 & time %in% c(-42:-49)~7, 
-    treat1==0 & time %in% c(-50:-56)~8, 
-    treat1==0 & time %in% c(-57:-63)~9, 
-    treat1==0 & time %in% c(-64:-70)~10, 
-    treat1==0 & time %in% c(-71:-77)~11, 
-    treat1==0 & time %in% c(-78:-84)~12,  
     TRUE~0)), 
     weeks_post=as.factor(case_when( 
       treat1==0 & time %in% c(0:7)~1, 
