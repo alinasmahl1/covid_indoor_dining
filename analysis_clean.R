@@ -100,7 +100,21 @@ state_allowed=as.Date(state_allowed, "%Y-%m-%d"),
                         Admin2=="Milwaukee"~"2020-06-05", 
                         Admin2=="San Francisco"~"2020-09-30", 
                         Admin2=="Marion"~"2020-06-01"), 
-city_opened=as.Date(city_opened, "%Y-%m-%d"))
+city_opened=as.Date(city_opened, "%Y-%m-%d"), 
+    dining_closed=case_when(
+      Admin2=="Philadelphia"~"2020-03-23",
+      Admin2=="Marion"~"2020-03-23",
+      Admin2=="San Francisco"~"2020-03-17", 
+      Admin2=="Milwaukee"~"2020-03-26", 
+      Admin2=="Maricopa"~"2020-03-31", 
+      Admin2=="Travis"~"2020-03-24", 
+      Admin2=="Dallas"~"2020-03-22",
+      Admin2=="Harris"~"2020-03-24", 
+      Admin2=="Bexar"~"2020-03-24", 
+      Admin2=="Fulton"~ "2020-03-24",
+      Admin2=="Charleston"~"2020-03-27"), 
+dining_closed=as.Date(dining_closed, "%Y-%m-%d"))
+
 
 pdf(file="results/figure_1.pdf")
 
@@ -111,15 +125,23 @@ figure1<-figure1_data%>%
   labs(title = "Rolling 7-day average new COVID-19 cases", 
        y = "New Cases",
        x = "Date") +
-  scale_x_date(breaks="2 month", date_labels = "%b", limits=as.Date(c('2020-03-01', '2020-10-01')))+
-  facet_wrap(~ cities, nrow=2) +
+  scale_x_date(breaks="1 month", date_labels = "%b", limits=as.Date(c('2020-03-01', '2020-10-01')))+
+  facet_wrap(~ cities) +
   theme(legend.position = "bottom") +
   theme_bw()+ theme(plot.title = element_text(size=10))+
   geom_vline(aes(xintercept=state_allowed, color="state_allowed"), annotation1, color="black")+
-  geom_vline(aes(xintercept=city_opened, color="city_opened"), annotation1, color="red")
+  geom_vline(aes(xintercept=city_opened, color="city_opened"), annotation1, color="red")+
+  geom_vline(aes(xintercept=dining_closed, color="dining_closed"), annotation1, color="grey", lty=1)
+  
 
 figure1
 dev.off()
+
+plots = replicate(8, qplot(1,1), simplify=FALSE)
+library(gridExtra)
+p <- do.call(marrangeGrob, c(figure1,ncol=1,nrow=1))
+
+ggsave("multipage.pdf", p, width=11, height=8.5)
 
 ####################################################
 #Figure 2:Parallel trends assumption 
@@ -150,6 +172,34 @@ rate_mean1 <- ggplot(data=means, aes(x=time, y=wt_meanrate, color=factor(treat1,
 
 rate_mean1
 dev.off()
+###############################################################################
+#Parallel trends analysis 
+#limit data to pre-period
+
+pre_period<-county_cases2%>%
+  filter(time<1)
+
+summary(pretrend<-lm(daily_count ~treat1*time,  data = pre_period))
+
+#w/ offset
+pretrend<-lm(daily_count ~treat1*time + offset(log(pop/100000)),  data = pre_period)
+
+#repeated w/ negative binomial
+summary(pretrend<-glm.nb(daily_count ~treat1*time + offset(log(pop/100000)),  data = pre_period))
+
+#repeated w/ deaths 
+pre_period_d<-county_deaths2%>%
+  filter(time<1)
+
+summary(pretrend_d<-lm(daily_deaths ~treat1*time,  data = pre_period_d))
+
+
+#w/ offset
+summary(pretrend<-lm(daily_deaths ~treat1*time + offset(log(pop/100000)),  data = pre_period_d))
+
+#w/ negative binomial
+summary(pretrend<-glm.nb(daily_deaths ~treat1*time + offset(log(pop/100000)),  data = pre_period_d))
+
 ###############################################################################
 #APPENDIX FIGURE 2
 #final figure for deaths 
@@ -214,8 +264,8 @@ summary(mod_nb1 <- glm.nb(daily_count ~pre_post,  data = county_cases2))
 stargazer(mod_nb1, apply.coef = exp, type='text')
 AIC(mod_nb1)
 BIC(mod_nb1)
-rse_mod_nb1<-exp(coeftest(mod_nb1, vcov=vcovCL(mod_nb1,type="HC1",cluster=~FIPS)))
-rci_mod_nb1<-exp(coefci(mod_nb1, vcov=vcovCL(mod_nb1,type="HC1",cluster=~FIPS)))
+rse_mod_nb1<-exp(coeftest(mod_nb1, vcov=vcovCL(mod_nb1,type="HC1",cluster=~FIPS + Province_State)))
+rci_mod_nb1<-exp(coefci(mod_nb1, vcov=vcovCL(mod_nb1,type="HC1",cluster=~FIPS+Province_State)))
 rse_mod_nb1
 rci_mod_nb1
 
@@ -228,8 +278,8 @@ BIC(mod_nb1off)
 ##add heteroskedasticity robust standard errors and cluster at city 
 #controls for mild violation of distribution assumption that var=mean
 # this is equivalent to vce cluster in stata, per https://rmcd1024.github.io/R_and_Stata/stata_and_R_clustering.pdf
-rse_mod_nb1off<-exp(coeftest(mod_nb1off, vcov=vcovCL(mod_nb1off,type="HC1",cluster=~FIPS)))
-rci_mod_nb1off<-exp(coefci(mod_nb1off, vcov=vcovCL(mod_nb1off,type="HC1",cluster=~FIPS)))
+rse_mod_nb1off<-exp(coeftest(mod_nb1off, vcov=vcovCL(mod_nb1off,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_nb1off<-exp(coefci(mod_nb1off, vcov=vcovCL(mod_nb1off,type="HC1",cluster=~FIPS+Province_State)))
 rse_mod_nb1off
 rci_mod_nb1off
 #offset better fit for model- include from here on. 
@@ -237,43 +287,45 @@ rci_mod_nb1off
 #add treat 
 summary(mod_nb2off<-glm.nb(daily_count~pre_post +treat1+ offset(log(pop/100000)), data=county_cases2))
 stargazer(mod_nb2off, apply.coef = exp, type='text')
-rse_mod_nb2off<-exp(coeftest(mod_nb2off, vcov=vcovCL(mod_nb2off,type="HC1",cluster=~FIPS)))
-rci_mod_nb2off<-exp(coefci(mod_nb2off, vcov=vcovCL(mod_nb2off,type="HC1",cluster=~FIPS)))
+rse_mod_nb2off<-exp(coeftest(mod_nb2off, vcov=vcovCL(mod_nb2off,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_nb2off<-exp(coefci(mod_nb2off, vcov=vcovCL(mod_nb2off,type="HC1",cluster=~FIPS+Province_State)))
 rse_mod_nb2off
 rci_mod_nb2off
-#add interaction 
-#final unadjusted model
-summary(mod_nb3<-glm.nb(daily_count~treat1*pre_post + offset(log(pop/100000)), data=county_cases2))
+
+################################
+#Final unadjusted model 
+summary(mod_nb3<-glm.nb(daily_count~treat1*pre_post+ offset(log(pop/100000)), data=county_cases2))
 stargazer(mod_nb3, apply.coef = exp, type='text')
-rse_mod_nb3f<-exp(coeftest(mod_nb3, vcov=vcovCL(mod_nb3,type="HC1",cluster=~FIPS)))
-rci_mod_nb3<-exp(coefci(mod_nb3, vcov=vcovCL(mod_nb3,type="HC1",cluster=~FIPS)))
+rse_mod_nb3<-exp(coeftest(mod_nb3, vcov=vcovCL(mod_nb3,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_nb3<-exp(coefci(mod_nb3, vcov=vcovCL(mod_nb3,type="HC1",cluster=~FIPS+Province_State)))
 rse_mod_nb3
 rci_mod_nb3
+
 ########add other policies########
 #stay at home order
-summary(mod_nb3a<-glm.nb(daily_count~treat1*pre_post + at_home + offset(log(pop/100000)), data=county_cases2))
+summary(mod_nb3a<-glm.nb(daily_count~treat1*pre_post + factor(cities)+ factor(cal_week) + at_home + offset(log(pop/100000)), data=county_cases2))
 stargazer(mod_nb3a, apply.coef = exp, type='text')
 anova(mod_nb3, mod_nb3a,  test="Chisq")
-rse_mod_nb3f<-exp(coeftest(mod_nb3, vcov=vcovCL(mod_nb3,type="HC1",cluster=~FIPS)))
-rci_mod_nb3<-exp(coefci(mod_nb3, vcov=vcovCL(mod_nb3,type="HC1",cluster=~FIPS)))
+rse_mod_nb3f<-exp(coeftest(mod_nb3, vcov=vcovCL(mod_nb3,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_nb3<-exp(coefci(mod_nb3, vcov=vcovCL(mod_nb3,type="HC1",cluster=~FIPS+Province_State)))
 rse_mod_nb3
 rci_mod_nb3
 
 #mask mandate
-summary(mod_nb3b<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + offset(log(pop/100000)), data=county_cases2))
+summary(mod_nb3b<-glm.nb(daily_count~treat1*pre_post + factor(cities)+ factor(cal_week) + at_home + mask_mandate + offset(log(pop/100000)), data=county_cases2))
 stargazer(mod_nb3b, apply.coef = exp, type='text')
 anova(mod_nb3a, mod_nb3b,  test="Chisq")
-rse_mod_nb3b<-exp(coeftest(mod_nb3b, vcov=vcovCL(mod_nb3b,type="HC1",cluster=~FIPS)))
-rci_mod_nb3b<-exp(coefci(mod_nb3b, vcov=vcovCL(mod_nb3b,type="HC1",cluster=~FIPS)))
+rse_mod_nb3b<-exp(coeftest(mod_nb3b, vcov=vcovCL(mod_nb3b,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_nb3b<-exp(coefci(mod_nb3b, vcov=vcovCL(mod_nb3b,type="HC1",cluster=~FIPS+Province_State)))
 rse_mod_nb3b
 rci_mod_nb3b
 #add eviction ban
 #Final adjusted model
-summary(mod_nb3c<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_end + offset(log(pop/100000)),  data=county_cases2))
+summary(mod_nb3c<-glm.nb(daily_count~treat1*pre_post + factor(cities)+ factor(cal_week) + at_home + mask_mandate + evict_end + offset(log(pop/100000)),  data=county_cases2))
 stargazer(mod_nb3c, apply.coef = exp, type='text')
 anova(mod_nb3b, mod_nb3c,  test="Chisq")
-rse_mod_nb3c<-exp(coeftest(mod_nb3c, vcov=vcovCL(mod_nb3c,type="HC1",cluster=~FIPS)))
-rci_mod_nb3c<-exp(coefci(mod_nb3c, vcov=vcovCL(mod_nb3c,type="HC1",cluster=~FIPS)))
+rse_mod_nb3c<-exp(coeftest(mod_nb3c, vcov=vcovCL(mod_nb3c,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_nb3c<-exp(coefci(mod_nb3c, vcov=vcovCL(mod_nb3c,type="HC1",cluster=~FIPS+Province_State)))
 rse_mod_nb3c
 rci_mod_nb3c
 #compare models 
@@ -282,6 +334,26 @@ models1<-list(mod_nb3a, mod_nb3b, mod_nb3c)
 
 stargazer(models, apply.coef=exp, type = "text", ci = TRUE, title="Base Models", out="results/table1.txt")
 stargazer(models1, apply.coef=exp, type="text", ci = TRUE, title="Models w/ NPIs", out="results/table1a.txt")
+
+##############################################################################################################################################
+#Rerun models w/ linear regression (basic did assumption)
+#unadjusted
+summary(lin_unajd<-lm(daily_count~treat1*pre_post + offset(log(pop/100000)), data=county_cases2))
+stargazer(mod_nb3, apply.coef = exp, type='text')
+rse_mod_nb3f<-exp(coeftest(mod_nb3, vcov=vcovCL(mod_nb3,type="HC1",cluster=~FIPS)))
+rci_mod_nb3<-exp(coefci(mod_nb3, vcov=vcovCL(mod_nb3,type="HC1",cluster=~FIPS)))
+rse_mod_nb3
+rci_mod_nb3
+
+
+#adjusted
+summary(lin_adj<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_end + offset(log(pop/100000)),  data=county_cases2))
+stargazer(mod_nb3c, apply.coef = exp, type='text')
+anova(mod_nb3b, mod_nb3c,  test="Chisq")
+rse_mod_nb3c<-exp(coeftest(mod_nb3c, vcov=vcovCL(mod_nb3c,type="HC1",cluster=~FIPS)))
+rse_mod_nb3c<-exp(coefci(mod_nb3c, vcov=vcovCL(mod_nb3c,type="HC1",cluster=~FIPS)))
+rse_mod_nb3c
+rci_mod_nb3c
 
 
 #####################################################################################
@@ -306,110 +378,120 @@ ic <- data.frame(Model = c("negative-binomial", "poisson"),
 print(xtable(ic, caption = "Information criteria results",
              label = "tab:ic_models", type="html"))
 
+
 #####################################################################################
 
 #Sensitivity analysis for cases 
 #testing alternative periods 
 
 #**********************************
-#Sensivity 1:no lag for other NPIs
-#only testing the interaction and full model 
-summary(mod_s2a1<-glm.nb(daily_count~treat1*pre_post + offset(log(pop/100000)), data=county_cases2a))
-stargazer(mod_s2a1, apply.coef = exp, type='text')
-rse_mod_s2a1-exp(coeftest(mod_s2a1, vcov=vcovCL(mod_s2a1,type="HC1",cluster=~FIPS)))
-rci_mod_s2a1<-exp(coefci(mod_s2a1, vcov=vcovCL(mod_s2a1,type="HC1",cluster=~FIPS)))
-rse_mod_s2a1
-rci_mod_s2a1
-summary(mod_s2a2<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2a))
-stargazer(mod_s2a2, apply.coef = exp, type='text')
-rse_mod_s2a2-exp(coeftest(mod_s2a2, vcov=vcovCL(mod_s2a2,type="HC1",cluster=~FIPS)))
-rci_mod_s2a2<-exp(coefci(mod_s2a2, vcov=vcovCL(mod_s2a2,type="HC1",cluster=~FIPS)))
-rse_mod_s2a2
-rci_mod_s2a2
+
 #**********************************
-###Sensivity 2: 9 day lag
+#*two way fixed effects model (controlling for city and calendar week time)
+#create new var that is essentially interaction of treat and pre_post (0 in pre 1 for treat and control, 1 for treat 14 days post time zero)
+county_cases2<-county_cases2%>%
+  mutate(policy=treat1*pre_post)
 
-summary(mod_s2b1<-glm.nb(daily_count~treat1*pre_post + offset(log(pop/100000)), data=county_cases2b))
-rse_mod_s2b1-exp(coeftest(mod_s2b1, vcov=vcovCL(mod_s2b1,type="HC1",cluster=~FIPS)))
-rci_mod_s2b1<-exp(coefci(mod_s2b1, vcov=vcovCL(mod_s2b1,type="HC1",cluster=~FIPS)))
-rse_mod_s2b1
-rci_mod_s2b1
+summary(mod_nb3<-glm.nb(daily_count~policy + factor(cities)+ factor(cal_week)+at_home + mask_mandate + evict_ban+ offset(log(pop/100000)), data=county_cases2))
+stargazer(mod_nb3, apply.coef = exp, type='text')
+rse_mod_nb3<-exp(coeftest(mod_nb3, vcov=vcovCL(mod_nb3,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_nb3<-exp(coefci(mod_nb3, vcov=vcovCL(mod_nb3,type="HC1",cluster=~FIPS+Province_State)))
+rse_mod_nb3
+rci_mod_nb3
 
-summary(mod_s2b2<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2b))
-stargazer(mod_s2b2, apply.coef = exp, type='text')
-rse_mod_s2b2-exp(coeftest(mod_s2b2, vcov=vcovCL(mod_s2b2,type="HC1",cluster=~FIPS)))
-rci_mod_s2b2<-exp(coefci(mod_s2b2, vcov=vcovCL(mod_s2b2,type="HC1",cluster=~FIPS)))
-rse_mod_s2b2
-rci_mod_s2b2
-#**********************************
-###Sensitivity 3: increase lag to 3 weeks (21 days)
-summary(mod_s2c1<-glm.nb(daily_count~treat1*pre_post + offset(log(pop/100000)), data=county_cases2c))
-rse_mod_s2c1-exp(coeftest(mod_s2c1, vcov=vcovCL(mod_s2c1,type="HC1",cluster=~FIPS)))
-rci_mod_s2c1<-exp(coefci(mod_s2c1, vcov=vcovCL(mod_s2c1,type="HC1",cluster=~FIPS)))
-rse_mod_s2c1
-rci_mod_s2c1
+#state fixed effect
+summary(mod_s2e2<-glm.nb(daily_count~treat1*pre_post + factor(Province_State)+ at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2e))
+stargazer(mod_s2e2, apply.coef = exp, type='text')
+rse_mod_s2e2<-exp(coeftest(mod_s2e2, vcov=vcovCL(mod_s2e2,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_s2e2<-exp(coefci(mod_s2e2, vcov=vcovCL(mod_s2e2,type="HC1",cluster=~FIPS+Province_State)))
+rse_mod_s2e2
+rci_mod_s2e2
 
-summary(mod_s2c2<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2c))
-stargazer(mod_s2c2, apply.coef = exp, type='text')
-rse_mod_s2c2-exp(coeftest(mod_s2c2, vcov=vcovCL(mod_s2c2,type="HC1",cluster=~FIPS)))
-rci_mod_s2c2<-exp(coefci(mod_s2c2, vcov=vcovCL(mod_s2c2,type="HC1",cluster=~FIPS)))
-rse_mod_s2c2
-rci_mod_s2c2
-###Sensivity 4: increase lag to 4 weeks (28 days)
-summary(mod_s2d1<-glm.nb(daily_count~treat1*pre_post + offset(log(pop/100000)), data=county_cases2d))
-rse_mod_s2d1-exp(coeftest(mod_s2d1, vcov=vcovCL(mod_s2d1,type="HC1",cluster=~FIPS)))
-rci_mod_s2d1<-exp(coefci(mod_s2d1, vcov=vcovCL(mod_s2d1,type="HC1",cluster=~FIPS)))
-rse_mod_s2d1
-rci_mod_s2d1
-
-summary(mod_s2d2<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2d))
-stargazer(mod_s2d2, apply.coef = exp, type='text')
-rse_mod_s2d2-exp(coeftest(mod_s2d2, vcov=vcovCL(mod_s2d2,type="HC1",cluster=~FIPS)))
-rci_mod_s2d2<-exp(coefci(mod_s2d2, vcov=vcovCL(mod_s2d2,type="HC1",cluster=~FIPS)))
-rse_mod_s2d2
-rci_mod_s2d2
-#sensitivity 5
+#*#sensitivity 1
 #Increase study period to 12 weeks 
 
 summary(mod_s2e1<-glm.nb(daily_count~treat1*pre_post + offset(log(pop/100000)), data=county_cases2e))
-rse_mod_s2e1-exp(coeftest(mod_s2e1, vcov=vcovCL(mod_s2e1,type="HC1",cluster=~FIPS)))
-rci_mod_s2e1<-exp(coefci(mod_s2e1, vcov=vcovCL(mod_s2e1,type="HC1",cluster=~FIPS)))
+rse_mod_s2e1-exp(coeftest(mod_s2e1, vcov=vcovCL(mod_s2e1,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_s2e1<-exp(coefci(mod_s2e1, vcov=vcovCL(mod_s2e1,type="HC1",cluster=~FIPS+Province_State)))
 rse_mod_s2e1
 rci_mod_s2e1
 
 summary(mod_s2e2<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2e))
 stargazer(mod_s2e2, apply.coef = exp, type='text')
-rse_mod_s2e2-exp(coeftest(mod_s2e2, vcov=vcovCL(mod_s2e2,type="HC1",cluster=~FIPS)))
-rci_mod_s2e2<-exp(coefci(mod_s2e2, vcov=vcovCL(mod_s2e2,type="HC1",cluster=~FIPS)))
+rse_mod_s2e2<-exp(coeftest(mod_s2e2, vcov=vcovCL(mod_s2e2,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_s2e2<-exp(coefci(mod_s2e2, vcov=vcovCL(mod_s2e2,type="HC1",cluster=~FIPS+Province_State)))
 rse_mod_s2e2
 rci_mod_s2e2
+
+###Sensivity 2: 9 day lag
+
+summary(mod_s2b1<-glm.nb(daily_count~treat1*pre_post + offset(log(pop/100000)), data=county_cases2b))
+rse_mod_s2b1<-exp(coeftest(mod_s2b1, vcov=vcovCL(mod_s2b1,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_s2b1<-exp(coefci(mod_s2b1, vcov=vcovCL(mod_s2b1,type="HC1",cluster=~FIPS+Province_State)))
+rse_mod_s2b1
+rci_mod_s2b1
+
+summary(mod_s2b2<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2b))
+stargazer(mod_s2b2, apply.coef = exp, type='text')
+rse_mod_s2b2<-exp(coeftest(mod_s2b2, vcov=vcovCL(mod_s2b2,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_s2b2<-exp(coefci(mod_s2b2, vcov=vcovCL(mod_s2b2,type="HC1",cluster=~FIPS+Province_State)))
+rse_mod_s2b2
+rci_mod_s2b2
+#**********************************
+###Sensitivity 3: increase lag to 3 weeks (21 days)
+summary(mod_s2c1<-glm.nb(daily_count~treat1*pre_post + offset(log(pop/100000)), data=county_cases2c))
+rse_mod_s2c1<-exp(coeftest(mod_s2c1, vcov=vcovCL(mod_s2c1,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_s2c1<-exp(coefci(mod_s2c1, vcov=vcovCL(mod_s2c1,type="HC1",cluster=~FIPS+Province_State)))
+rse_mod_s2c1
+rci_mod_s2c1
+
+summary(mod_s2c2<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2c))
+stargazer(mod_s2c2, apply.coef = exp, type='text')
+rse_mod_s2c2<-exp(coeftest(mod_s2c2, vcov=vcovCL(mod_s2c2,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_s2c2<-exp(coefci(mod_s2c2, vcov=vcovCL(mod_s2c2,type="HC1",cluster=~FIPS+Province_State)))
+rse_mod_s2c2
+rci_mod_s2c2
+###Sensivity 4: increase lag to 4 weeks (28 days)
+summary(mod_s2d1<-glm.nb(daily_count~treat1*pre_post + offset(log(pop/100000)), data=county_cases2d))
+rse_mod_s2d1<-exp(coeftest(mod_s2d1, vcov=vcovCL(mod_s2d1,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_s2d1<-exp(coefci(mod_s2d1, vcov=vcovCL(mod_s2d1,type="HC1",cluster=~FIPS+Province_State)))
+rse_mod_s2d1
+rci_mod_s2d1
+
+summary(mod_s2d2<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2d))
+stargazer(mod_s2d2, apply.coef = exp, type='text')
+rse_mod_s2d2<-exp(coeftest(mod_s2d2, vcov=vcovCL(mod_s2d2,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_s2d2<-exp(coefci(mod_s2d2, vcov=vcovCL(mod_s2d2,type="HC1",cluster=~FIPS+Province_State)))
+rse_mod_s2d2
+rci_mod_s2d2
+
 ###remove the non bchc cities 
 summary(mod_s2f1<-glm.nb(daily_count~treat1*pre_post + offset(log(pop/100000)), data=county_cases2f))
-rse_mod_s2f1-exp(coeftest(mod_s2f1, vcov=vcovCL(mod_s2f1,type="HC1",cluster=~FIPS)))
-rci_mod_s2f1<-exp(coefci(mod_s2f1, vcov=vcovCL(mod_s2f1,type="HC1",cluster=~FIPS)))
+rse_mod_s2f1<-exp(coeftest(mod_s2f1, vcov=vcovCL(mod_s2f1,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_s2f1<-exp(coefci(mod_s2f1, vcov=vcovCL(mod_s2f1,type="HC1",cluster=~FIPS+Province_State)))
 rse_mod_s2f1
 rci_mod_s2f1
 
 summary(mod_s2f2<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2f))
 stargazer(mod_s2f2, apply.coef = exp, type='text')
-rse_mod_s2f2-exp(coeftest(mod_s2f2, vcov=vcovCL(mod_s2f2,type="HC1",cluster=~FIPS)))
-rci_mod_s2f2<-exp(coefci(mod_s2f2, vcov=vcovCL(mod_s2f2,type="HC1",cluster=~FIPS)))
+rse_mod_s2f2<-exp(coeftest(mod_s2f2, vcov=vcovCL(mod_s2f2,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_s2f2<-exp(coefci(mod_s2f2, vcov=vcovCL(mod_s2f2,type="HC1",cluster=~FIPS+Province_State)))
 rse_mod_s2f2
 rci_mod_s2f2
 
 ##remove SF 
 summary(mod_s2g2<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_end + offset(log(pop/100000)),  data=filter(county_cases2, Admin2!="San Francisco")))
 stargazer(mod_s2g2, apply.coef = exp, type='text')
-rse_mod_s2g2-exp(coeftest(mod_s2g2, vcov=vcovCL(mod_s2g2,type="HC1",cluster=~FIPS)))
-rci_mod_s2g2<-exp(coefci(mod_s2g2, vcov=vcovCL(mod_s2g2,type="HC1",cluster=~FIPS)))
+rse_mod_s2g2<-exp(coeftest(mod_s2g2, vcov=vcovCL(mod_s2g2,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_s2g2<-exp(coefci(mod_s2g2, vcov=vcovCL(mod_s2g2,type="HC1",cluster=~FIPS+Province_State)))
 rse_mod_s2g2
 rci_mod_s2g2
 
-#add in the calendar week fixed effects
-summary(mod_s2h2c<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_end +  factor(cal_week)+ offset(log(pop/100000)),  data=county_cases2))
+#add in the calendar week & city fixed effects
+summary(mod_s2h2c<-glm.nb(daily_count~treat1 + at_home + mask_mandate + evict_end +factor(FIPS)+  factor(cal_week)+ offset(log(pop/100000)),  data=county_cases2))
 stargazer(mod_s2h2, apply.coef = exp, type='text')
-rse_mod_s2h2-exp(coeftest(mod_s2h2, vcov=vcovCL(mod_s2h2,type="HC1",cluster=~FIPS)))
-rci_mod_s2h2<-exp(coefci(mod_s2h2, vcov=vcovCL(mod_s2h2,type="HC1",cluster=~FIPS)))
+rse_mod_s2h2-exp(coeftest(mod_s2h2, vcov=vcovCL(mod_s2h2,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_s2h2<-exp(coefci(mod_s2h2, vcov=vcovCL(mod_s2h2,type="HC1",cluster=~FIPS+Province_State)))
 rse_mod_s2h2
 rci_mod_s2h2
 
@@ -428,15 +510,30 @@ models_sen2 <- list(mod_s2e1, mod_s2e2, mod_s2f1,mod_s2f2)
 stargazer(models_sen2, apply.coef=exp, type = "text", ci = TRUE, title="Sensitivity_period, BCHC", out="results/table_1sb_cases.txt")
 
 
-#Not included in article
-#Sensitivity 7: using the re-opening dates of all cities, so no treatment 
-#limit to start date 
-summary(mod_s2g1<-glm.nb(daily_count~pre_post + treat1+ at_home + mask_mandate + evict_ban  + offset(log(pop/100000)),  data=county_cases_sens2))
-stargazer(mod_s2g1, apply.coef = exp, type='text')
-rse_mod_s2g1-exp(coeftest(mod_s2g1, vcov=vcovCL(mod_s2g1,type="HC1",cluster=~FIPS)))
-rci_mod_s2g1<-exp(coefci(mod_s2g1, vcov=vcovCL(mod_s2g1,type="HC1",cluster=~FIPS)))
-rse_mod_s2g1
-rci_mod_s2g1
+#two way fixed effects DiD model
+
+#create new var that is already an interaction of policy + pre-post 
+county_casestest<-county_cases2%>%
+  mutate(anypolicy=treat1*pre_post)
+
+#unadjusted 
+summary(mod_nb3<-glm.nb(daily_count~policy + factor(cities)+ factor(cal_week)+ offset(log(pop/100000)), data=county_cases2))
+stargazer(mod_nb3, apply.coef = exp, type='text')
+rse_mod_nb3<-exp(coeftest(mod_nb3, vcov=vcovCL(mod_nb3,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_nb3<-exp(coefci(mod_nb3, vcov=vcovCL(mod_nb3,type="HC1",cluster=~FIPS+Province_State)))
+rse_mod_nb3
+rci_mod_nb3
+
+#adjusted
+summary(fixed<-glm.nb(daily_count~anypolicy + factor(cities)+ factor(cal_week) + at_home + mask_mandate + evict_ban + offset(log(pop/100000)), data=county_casestest))
+stargazer(fixed, apply.coef = exp, type='text')
+rse_fixed<-exp(coeftest(fixed, vcov=vcovCL(fixed,type="HC1",cluster=~FIPS+Province_State)))
+rci_fixed<-exp(coefci(fixed, vcov=vcovCL(fixed,type="HC1",cluster=~FIPS+Province_State)))
+rse_fixed
+rci_fixed
+
+summary(mod_nb3<-glm.nb(daily_count~treat1*pre_post+ factor(cities)+  factor(cal_week)+ offset(log(pop/100000)), data=county_casestest))
+stargazer(mod_nb3, apply.coef = exp, type='text')
 
 
 
@@ -445,46 +542,52 @@ rci_mod_s2g1
 #######################################################
 #base model 
 #just weeks
-summary(mod_e1<-glm.nb(daily_count~weeks_prior_1+ weeks_prior_2+ weeks_prior_3+weeks_prior_4 + weeks_post_1 +weeks_post_2 + weeks_post_3+ weeks_post_4 +weeks_post_5 +weeks_post_6+ weeks_post_7+weeks_post_8 + offset(log(pop/100000)),  data=event_model1))
+summary(mod_e1<-glm.nb(daily_count~ weeks_prior_1+ weeks_prior_2+ weeks_prior_3+weeks_prior_4 + weeks_post_1 +weeks_post_2 + weeks_post_3+ weeks_post_4 +weeks_post_5 +weeks_post_6+ weeks_post_7+weeks_post_8 + offset(log(pop/100000)),  data=event_model1))
 stargazer(mod_e1, apply.coef = exp, type='text')
 #robust standard errors clustered at city level 
-rse_mod_e1<-exp(coeftest(mod_e1, vcov=vcovCL(mod_e1,type="HC1",cluster=~FIPS)))
-rci_mod_e1<-exp(coefci(mod_e1, vcov=vcovCL(mod_e1,type="HC1",cluster=~FIPS)))
+rse_mod_e1<-exp(coeftest(mod_e1, vcov=vcovCL(mod_e1,type="HC1",cluster=~FIPS++Province_State)))
+rci_mod_e1<-exp(coefci(mod_e1, vcov=vcovCL(mod_e1,type="HC1",cluster=~FIPS+Province_State)))
 rse_mod_e1
 rci_mod_e1
 
 #adding city fixed effects
-summary(mod_e2<-glm.nb(daily_count~weeks_prior_1+ weeks_prior_2+ weeks_prior_3+weeks_prior_4 + weeks_post_1 +weeks_post_2 + weeks_post_3+ weeks_post_4 +weeks_post_5 +weeks_post_6+ weeks_post_7+weeks_post_8  + cities + offset(log(pop/100000)),  data=event_model1))
-rse_mod_e2<-exp(coeftest(mod_e2, vcov=vcovCL(mod_e2,type="HC1",cluster=~FIPS)))
-rci_mod_e2<-exp(coefci(mod_e2, vcov=vcovCL(mod_e2,type="HC1",cluster=~FIPS)))
+summary(mod_e2<-glm.nb(daily_count~ weeks_prior_1+ weeks_prior_2+ weeks_prior_3+weeks_prior_4 + weeks_post_1 +weeks_post_2 + weeks_post_3+ weeks_post_4 +weeks_post_5 +weeks_post_6+ weeks_post_7+weeks_post_8  + factor(cities) + offset(log(pop/100000)),  data=event_model1))
+rse_mod_e2<-exp(coeftest(mod_e2, vcov=vcovCL(mod_e2,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_e2<-exp(coefci(mod_e2, vcov=vcovCL(mod_e2,type="HC1",cluster=~FIPS+Province_State)))
 rse_mod_e2
 rci_mod_e2
 #adding calendar week fixed effects 
 summary(mod_e3<-glm.nb(daily_count~weeks_prior_1+ weeks_prior_2+ weeks_prior_3+weeks_prior_4 + weeks_post_1 +weeks_post_2 + weeks_post_3+ weeks_post_4 +weeks_post_5 +weeks_post_6+ weeks_post_7+weeks_post_8  + factor(cal_week) + factor(cities) + offset(log(pop/100000)),  data=event_model1))
-rse_mod_e3<-exp(coeftest(mod_e3, vcov=vcovCL(mod_e3,type="HC1",cluster=~FIPS)))
-rci_mod_e3<-exp(coefci(mod_e3, vcov=vcovCL(mod_e3,type="HC1",cluster=~FIPS)))
+rse_mod_e3<-exp(coeftest(mod_e3, vcov=vcovCL(mod_e3,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_e3<-exp(coefci(mod_e3, vcov=vcovCL(mod_e3,type="HC1",cluster=~FIPS+Province_State)))
 rse_mod_e3
 rci_mod_e3
+
+
 #adding mask mandate (factor) 
 summary(mod_e4a<-glm.nb(daily_count~weeks_prior +weeks_post+ cal_week + cities +mask_week + offset(log(pop/100000)),  data=event_model3))
-rse_mod_e4a<-exp(coeftest(mod_e4a, vcov=vcovCL(mod_e4a,type="HC1",cluster=~FIPS)))
-rci_mod_e4a<-exp(coefci(mod_e4a, vcov=vcovCL(mod_e4a,type="HC1",cluster=~FIPS)))
+rse_mod_e4a<-exp(coeftest(mod_e4a, vcov=vcovCL(mod_e4a,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_e4a<-exp(coefci(mod_e4a, vcov=vcovCL(mod_e4a,type="HC1",cluster=~FIPS+Province_State)))
 rse_mod_e4a
 rci_mod_e4a
 
 #adding stay at home order (factor)
 summary(mod_e4b<-glm.nb(daily_count~weeks_prior_1+ weeks_prior_2+ weeks_prior_3+weeks_prior_4 + weeks_post_1 +weeks_post_2 + weeks_post_3+ weeks_post_4 +weeks_post_5 +weeks_post_6+ weeks_post_7+weeks_post_8  + factor(cal_week) + factor(cities) +mask_week + stay_week+ offset(log(pop/100000)),  data=event_model1))
-rse_mod_e4b<-exp(coeftest(mod_e4b, vcov=vcovCL(mod_e4b,type="HC1",cluster=~FIPS)))
-rci_mod_e4b<-exp(coefci(mod_e4b, vcov=vcovCL(mod_e4b,type="HC1",cluster=~FIPS)))
+rse_mod_e4b<-exp(coeftest(mod_e4b, vcov=vcovCL(mod_e4b,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_e4b<-exp(coefci(mod_e4b, vcov=vcovCL(mod_e4b,type="HC1",cluster=~FIPS+Province_State)))
 rse_mod_e4b
 rci_mod_e4b
 #adding eviction ban (factor)
+####################################
+####Final Event Model (Main Model)
+####################################
 summary(mod_e4c<-glm.nb(daily_count~  weeks_prior_2+ weeks_prior_3+weeks_prior_4 + weeks_post_1 +weeks_post_2 + weeks_post_3+ weeks_post_4 +weeks_post_5 +weeks_post_6+ weeks_post_7+weeks_post_8 + factor(cal_week) + factor(cities) + mask_week + stay_week+ evict_week + (log(pop/100000)),  data=event_model1))
 stargazer(mod_e4c, apply.coef=exp, type="text", title="IRRs event model")
-rse_mod_e4c<-exp(coeftest(mod_e4c, vcov=vcovCL(mod_e4c,type="HC1",cluster=~FIPS)))
-rci_mod_e4c<-exp(coefci(mod_e4c, vcov=vcovCL(mod_e4c,type="HC1",cluster=~FIPS)))
+rse_mod_e4c<-exp(coeftest(mod_e4c, vcov=vcovCL(mod_e4c,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_e4c<-exp(coefci(mod_e4c, vcov=vcovCL(mod_e4c,type="HC1",cluster=~FIPS+Province_State)))
 rse_mod_e4c
 rci_mod_e4c
+
 
 #store model output
 event_models<-list(mod_e1, mod_e2, mod_e3, mod_e4a, mod_e4b, mod_e4c)
@@ -494,18 +597,19 @@ stargazer(event_models, apply.coef=exp, type="text", title="IRRs event model", o
 #using final model 
 summary(mod_e4b<-glm.nb(daily_count~ weeks_prior_2+ weeks_prior_3+weeks_prior_4  + weeks_post_1 +weeks_post_2 + weeks_post_3+ weeks_post_4 +weeks_post_5 +weeks_post_6+ weeks_post_7+weeks_post_8 +weeks_post_9 +weeks_post_10 + weeks_post_11 +weeks_post_12  + factor(cal_week) + cities +mask_week + stay_week+ evict_week + (log(pop/100000)),  data=event_model2))
 stargazer(mod_e4b, apply.coef=exp, type="text", title="IRRs event model")
-rse_mod_e4b<-exp(coeftest(mod_e4b, vcov=vcovCL(mod_e4b,type="HC1",cluster=~FIPS)))
-rci_mod_e4b<-exp(coefci(mod_e4b, vcov=vcovCL(mod_e4b,type="HC1",cluster=~FIPS)))
+rse_mod_e4b<-exp(coeftest(mod_e4b, vcov=vcovCL(mod_e4b,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_e4b<-exp(coefci(mod_e4b, vcov=vcovCL(mod_e4b,type="HC1",cluster=~FIPS+Province_State)))
 rse_mod_e4b
 rci_mod_e4b
 
 #sensivity 2
 summary(mod_e4d<-glm.nb(daily_count~ weeks_prior_2+ weeks_prior_3+weeks_prior_4 + weeks_post_1 +weeks_post_2 + weeks_post_3+ weeks_post_4 +weeks_post_5 +weeks_post_6+ weeks_post_7+weeks_post_8 +weeks_post_9 +weeks_post_10 + weeks_post_11 +weeks_post_12  + factor(cal_week) + cities +mask_week + stay_week+ evict_week + (log(pop/100000)),  data=event_model3))
 stargazer(mod_e4d, apply.coef=exp, type="text", title="IRRs event model")
-rse_mod_e4d<-exp(coeftest(mod_e4d, vcov=vcovCL(mod_e4d,type="HC1",cluster=~FIPS)))
-rci_mod_e4d<-exp(coefci(mod_e4d, vcov=vcovCL(mod_e4d,type="HC1",cluster=~FIPS)))
+rse_mod_e4d<-exp(coeftest(mod_e4d, vcov=vcovCL(mod_e4d,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_e4d<-exp(coefci(mod_e4d, vcov=vcovCL(mod_e4d,type="HC1",cluster=~FIPS+Province_State)))
 rse_mod_e4d
 rci_mod_e4d
+
 
 
 ####################################################

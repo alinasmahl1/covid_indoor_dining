@@ -207,7 +207,7 @@ save(event_model3, file="event_model3.Rdata")
 #######################################################
 #base model 
 #just weeks
-#pretty sure adding each week_prio and weeks_post is the least efficient way to add to regression, but couldn't figure out alterntive. 
+
 f<-as.formula(paste0("daily_count~", 
                      paste("weeks_prior_", 1:4, collapse="+", sep=""), "+",
                      paste("weeks_post_", 1:8, collapse="+", sep=""), 
@@ -231,7 +231,6 @@ ggplot(all_mod_e1, aes(x=time, y=est)) +
   theme_bw()
 
 #adding city fixed effects
-#think I can just add in
 summary(mod_e2<-glm.nb(daily_count~weeks_prior_1+ weeks_prior_2+ weeks_prior_3+weeks_prior_4 + weeks_post_1 +weeks_post_2 + weeks_post_3+ weeks_post_4 +weeks_post_5 +weeks_post_6+ weeks_post_7+weeks_post_8  + cities + offset(log(pop/100000)),  data=event_model3))
 rse_mod_e2<-exp(coeftest(mod_e2, vcov = vcovHC,  cluster= ~cities))
 rci_mod_e2<-exp(coefci(mod_e2, vcov = vcovHC,  cluster= ~cities))
