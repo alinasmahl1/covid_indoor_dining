@@ -27,7 +27,7 @@ cities_pop<-c(".Philadelphia County, Pennsylvania", ".Marion County, Indiana",
               ".Travis County, Texas", ".Dallas County, Texas", ".Harris County, Texas", 
               ".Bexar County, Texas", ".Fulton County, Georgia", ".Charleston County, South Carolina")
 
-#limit population dataset to counties we're exploring 
+#limit population dataset to counties/cities in study
 population1<-population%>%
   filter(V1%in% cities_pop)%>%
   #add fips
@@ -152,8 +152,6 @@ county_cases1$daily_count[county_cases1$daily_count< 0] <- 0
 
 
 hist(county_cases1$daily_count)
-
-#can also use the county_cases1bchc data; available in the bchc_data.R file
 
 #option 1, using 14 day lag for all NPIs
 county_cases2<-county_cases1%>%
@@ -1039,8 +1037,7 @@ save(roll_avg_death, file="roll_avg_death.Rdata")
 
 #-----------------------------------------------------------#
 #SENSITIVITY ANALYSIS 
-#NOTE: We do not include this analysis in the article-- it's just an ITS, so weaker than DID
-#but we do show the figure based on this dataset.
+#NOTE: We do not include this analysis in the article
 
 #Dates using dates of reopenings for each city (not our actual study periods)
 #limit cases to counties of interest and time periods of study period
