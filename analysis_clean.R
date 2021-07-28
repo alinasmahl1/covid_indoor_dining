@@ -604,9 +604,9 @@ ggplot(data=dta, aes(x=week, y=coef, group=type))+
         plot.title = element_text(color="black", size=fontsize, face="bold"),
         strip.text = element_text(color="black", size=fontsize, face="bold"),
         strip.background = element_blank())
-ggsave("ES_Figure_D3.pdf", width=10, height=7)
-ggsave("ES_Figure_D3.png", width=10, height=7)
-ggsave("ES_Figure_D3.jpg", width=10, height=7)
+ggsave("results/ES_Figure_D3.pdf", width=10, height=7)
+ggsave("results/ES_Figure_D3.png", width=10, height=7)
+ggsave("results/ES_Figure_D3.jpg", width=10, height=7)
 
 ################################################################################
 #      ************************Descriptive data***********************
