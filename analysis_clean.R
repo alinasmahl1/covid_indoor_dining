@@ -542,6 +542,73 @@ rci_mod_e4d<-exp(coefci(mod_e4d, vcov=vcovCL(mod_e4d,type="HC1",cluster=~FIPS+Pr
 rse_mod_e4d
 rci_mod_e4d
 
+
+##############################################################################
+#Event Study Model: Appendix FIgure D3
+
+#load dataset w/ output from event study model
+dta<-read_excel("data/tabled3.xlsx")
+
+models<-colnames(dta)[-1]
+dta<-dta %>% rename(week=1) %>% 
+  gather(type, value, -week) %>% 
+  mutate(value=gsub("\\*", "", value),
+         coef=substr(value, 1, regexpr("\\(", value)-1),
+         lci=substr(value, regexpr("\\(", value)+1, regexpr("\\,", value)-1),
+         uci=substr(value, regexpr("\\,", value)+1, regexpr("\\)", value)-1),
+         coef=ifelse(value=="Ref", 1, coef),
+         lci=ifelse(value=="Ref", 1, lci),
+         uci=ifelse(value=="Ref", 1, uci),
+         coef=as.numeric(coef),
+         lci=as.numeric(lci),
+         uci=as.numeric(uci),
+         week=ifelse(week<0, week+1, week),
+         type=factor(type, levels=models))
+fontsize<-20
+ggplot(data=dta, aes(x=week, y=coef, group=type))+
+  #geom_ribbon(aes(ymin=lci, ymax=uci, group=type), linetype=2, fill="gray80")+
+  geom_hline(yintercept = 1, lty=2)+
+  geom_linerange(aes(ymin=lci, ymax=uci, group=type), position=position_dodge(width=0.3))+
+  geom_line(aes(lty=type), position=position_dodge(width=0.3))+
+  geom_point(aes(shape=type), color="black", fill="gray", position=position_dodge(width=0.3)) + 
+  geom_vline(aes(xintercept=0), color="black")+
+  scale_y_continuous(trans="log", breaks=pretty_breaks())+
+  labs(title = "",
+       y = "IRR",
+       x = "Weeks since dining allowed to re-open") +
+  theme_bw()+
+  theme(axis.text=element_text(color="black", size=16),
+        axis.title=element_text(color="black", size=16, face="bold"))
+
+
+ggplot(data=dta, aes(x=week, y=coef, group=type))+
+  geom_ribbon(aes(ymin=lci, ymax=uci, group=type, fill=type), alpha=0.2)+
+  geom_hline(yintercept = 1, lty=2)+
+  geom_vline(xintercept = 0, lty=2)+
+  geom_line(aes(color=type))+
+  geom_point(aes(shape=type,fill=type), color="black") + 
+  scale_y_continuous(trans="log", breaks=2^c(-1:5))+
+  scale_x_continuous(breaks=seq(-4, 12, by=2))+
+  scale_shape_manual(values=c(21, 22, 23), name="")+
+  scale_fill_brewer(type="qual", palette=2, name="")+
+  scale_color_brewer(type="qual", palette=2, name="")+
+  labs(title = "",
+       y = "IRR (95% CI)",
+       x = "Weeks since indoor dining allowed to re-open") +
+  theme_bw()+
+  theme(legend.text=element_text(color="black", size=fontsize),
+        legend.background = element_blank(),
+        #legend.position = "bottom",
+        legend.position=c(0.2,.8),
+        axis.text=element_text(color="black", size=fontsize),
+        axis.title=element_text(color="black", size=fontsize, face="bold"),
+        plot.title = element_text(color="black", size=fontsize, face="bold"),
+        strip.text = element_text(color="black", size=fontsize, face="bold"),
+        strip.background = element_blank())
+ggsave("ES_Figure_D3.pdf", width=10, height=7)
+ggsave("ES_Figure_D3.png", width=10, height=7)
+ggsave("ES_Figure_D3.jpg", width=10, height=7)
+
 ################################################################################
 #      ************************Descriptive data***********************
 ################################################################################
