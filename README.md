@@ -7,5 +7,6 @@ https://github.com/CSSEGISandData/COVID-19
 All data files produced by the data_managment file is also available in the data folder
 
 analysis_clean.R includes code to produce the output for tables and all figures in the main article and appendix. 
+Margins_covid_pre.do includes stata code to calculate average marginal effects
 
 Please reach out to Alina Schnake-Mahl alinasmahl@drexel.edu with any questions. 
