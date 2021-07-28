@@ -170,7 +170,7 @@ county_cases2<-county_cases1%>%
   mutate(case_rate=daily_count/pop*100000)
 
 save(county_cases1, 
-  county_cases2, file="daily_count.Rdata")
+  county_cases2, file="data/daily_count.Rdata")
 
 #Sensitivity Analyses 
 
@@ -287,7 +287,7 @@ save(county_cases2,
      county_cases2c,
      county_cases2d,
      county_cases2e,
-     county_cases2f, file="daily_count_2a.Rdata")
+     county_cases2f, file="data/daily_count_2a.Rdata")
 
 #Event Study dataset
 #increase time period to +/- 12 weeks 
@@ -575,7 +575,7 @@ event_model3<-event_model%>%
 
 save(event_model1,
      event_model2, 
-     event_model3, file="event_model1.Rdata")
+     event_model3, file="data/event_model1.Rdata")
 
 #event model for graphing 
 event_model2m<-event_model%>%
@@ -612,7 +612,7 @@ event_model2m<-event_model%>%
 
 table(event_model2$weeks)
 
-save(event_model2, file="event_model2.Rdata")
+save(event_model2, file="data/event_model2.Rdata")
 ###MOVING AVERAGES
 #calculate moving average 
 roll_avg <- county_cases2 %>%
@@ -626,7 +626,7 @@ roll_avg <- county_cases2 %>%
                 caserate_07da = zoo::rollmean(case_rate, k = 7, fill = NA)) %>% 
   dplyr::ungroup()
 
-save(roll_avg, file="roll_avg.Rdata")
+save(roll_avg, file="data/roll_avg.Rdata")
 
 #------------------------------------------------------------------------------#
                         ###############Deaths ####################
@@ -829,7 +829,7 @@ save(county_deaths2,
      county_deaths2b,
      county_deaths2c,
      county_deaths2d,
-     county_deaths2e, file="daily_count_deaths.Rdata")
+     county_deaths2e, file="data/daily_count_deaths.Rdata")
 
 #Event Study dataset
 #increase time period to +/- 12 weeks 
@@ -982,7 +982,7 @@ event_model_death1<-event_model_death%>%
       evict_days %in% c(15:21)~3, 
       evict_days %in% c(22:28)~4, 
       evict_days >28 ~5)))
-save(event_model_death1, file="event_model_death1.Rdata")
+save(event_model_death1, file="data/event_model_death1.Rdata")
 
 
 #event model for graphing 
@@ -1019,7 +1019,7 @@ event_model_death2<-event_model_death%>%
                 weekly_rate=sum(death_rate))%>%
       ungroup()
 
-save(event_model_death2, file="event_model_death2.Rdata")
+save(event_model_death2, file="data/event_model_death2.Rdata")
 ###MOVING AVERAGES
 #calculate moving average 
 roll_avg_death <- county_deaths2 %>%
@@ -1033,7 +1033,7 @@ roll_avg_death <- county_deaths2 %>%
                 deathrate_07da = zoo::rollmean(death_rate, k = 7, fill = NA)) %>% 
   dplyr::ungroup()
 
-save(roll_avg_death, file="roll_avg_death.Rdata")
+save(roll_avg_death, file="data/roll_avg_death.Rdata")
 
 #-----------------------------------------------------------#
 #SENSITIVITY ANALYSIS 
@@ -1196,5 +1196,5 @@ roll_avg_sens3 <- county_cases_sens3 %>%
 save(county_cases_sens3, 
      county_cases_sens2, 
      roll_avg_sens2, 
-     roll_avg_sens3, file="sens2_all.Rdata")
+     roll_avg_sens3, file="data/sens2_all.Rdata")
 
