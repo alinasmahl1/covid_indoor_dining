@@ -29,6 +29,7 @@ load("data/county_cases_sens2.Rdata")
 load("data/daily_count_2a.Rdata")
 load("data/daily_count_deaths.Rdata")
 load("data/sens2_all.Rdata")
+
 cities<-c(42101,18097,6075, 55079, 4013, 48453, 48113, 48201,  48029, 13121,45019)
 
 # export county_cases2 for stata (for marginal mean estimates)
@@ -395,17 +396,8 @@ rse_mod_s2e2
 rci_mod_s2e2
 
 #Increase study period to 12 weeks 
-county_cases2e<-county_cases2e%>%
-  mutate(policy=treat1*pre_post)
 
-summary(mod_s2e1<-glm.nb(daily_count~policy + factor(cities)+ factor(cal_week) + offset(log(pop/100000)), data=county_cases2e))
-stargazer(mod_s2e1, apply.coef = exp, type='text')
-rse_mod_s2e1-exp(coeftest(mod_s2e1, vcov=vcovCL(mod_s2e1,type="HC1",cluster=~FIPS+Province_State)))
-rci_mod_s2e1<-exp(coefci(mod_s2e1, vcov=vcovCL(mod_s2e1,type="HC1",cluster=~FIPS+Province_State)))
-rse_mod_s2e1
-rci_mod_s2e1
-
-summary(mod_s2e2<-glm.nb(daily_count~policy + factor(cities)+ factor(cal_week)+ at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2e))
+summary(mod_s2e2<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2e))
 stargazer(mod_s2e2, apply.coef = exp, type='text')
 rse_mod_s2e2<-exp(coeftest(mod_s2e2, vcov=vcovCL(mod_s2e2,type="HC1",cluster=~FIPS+Province_State)))
 rci_mod_s2e2<-exp(coefci(mod_s2e2, vcov=vcovCL(mod_s2e2,type="HC1",cluster=~FIPS+Province_State)))
@@ -413,47 +405,26 @@ rse_mod_s2e2
 rci_mod_s2e2
 
 ###Sensivity: 9 day lag
-county_cases2b<-county_cases2b%>%
-  mutate(policy=treat1*pre_post)
-summary(mod_s2b1<-glm.nb(daily_count~policy + factor(cities)+ factor(cal_week) + offset(log(pop/100000)), data=county_cases2b))
-rse_mod_s2b1<-exp(coeftest(mod_s2b1, vcov=vcovCL(mod_s2b1,type="HC1",cluster=~FIPS+Province_State)))
-rci_mod_s2b1<-exp(coefci(mod_s2b1, vcov=vcovCL(mod_s2b1,type="HC1",cluster=~FIPS+Province_State)))
-rse_mod_s2b1
-rci_mod_s2b1
 
-summary(mod_s2b2<-glm.nb(daily_count~policy + factor(cities)+ factor(cal_week) + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2b))
+summary(mod_s2b2<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2b))
 stargazer(mod_s2b2, apply.coef = exp, type='text')
 rse_mod_s2b2<-exp(coeftest(mod_s2b2, vcov=vcovCL(mod_s2b2,type="HC1",cluster=~FIPS+Province_State)))
 rci_mod_s2b2<-exp(coefci(mod_s2b2, vcov=vcovCL(mod_s2b2,type="HC1",cluster=~FIPS+Province_State)))
 rse_mod_s2b2
 rci_mod_s2b2
+
 ###Sensitivity: increase lag to 3 weeks (21 days)
-county_cases2c<-county_cases2c%>%
-  mutate(policy=treat1*pre_post)
 
-summary(mod_s2c1<-glm.nb(daily_count~policy + factor(cities)+ factor(cal_week)+ offset(log(pop/100000)), data=county_cases2c))
-rse_mod_s2c1<-exp(coeftest(mod_s2c1, vcov=vcovCL(mod_s2c1,type="HC1",cluster=~FIPS+Province_State)))
-rci_mod_s2c1<-exp(coefci(mod_s2c1, vcov=vcovCL(mod_s2c1,type="HC1",cluster=~FIPS+Province_State)))
-rse_mod_s2c1
-rci_mod_s2c1
-
-summary(mod_s2c2<-glm.nb(daily_count~policy + factor(cities)+ factor(cal_week) + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2c))
+summary(mod_s2c2<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2c))
 stargazer(mod_s2c2, apply.coef = exp, type='text')
 rse_mod_s2c2<-exp(coeftest(mod_s2c2, vcov=vcovCL(mod_s2c2,type="HC1",cluster=~FIPS+Province_State)))
 rci_mod_s2c2<-exp(coefci(mod_s2c2, vcov=vcovCL(mod_s2c2,type="HC1",cluster=~FIPS+Province_State)))
 rse_mod_s2c2
 rci_mod_s2c2
+
 ###Sensivity 4: increase lag to 4 weeks (28 days)
-county_cases2d<-county_cases2d%>%
-  mutate(policy=treat1*pre_post)
 
-summary(mod_s2d1<-glm.nb(daily_count~policy + factor(cities)+ factor(cal_week) + offset(log(pop/100000)), data=county_cases2d))
-rse_mod_s2d1<-exp(coeftest(mod_s2d1, vcov=vcovCL(mod_s2d1,type="HC1",cluster=~FIPS+Province_State)))
-rci_mod_s2d1<-exp(coefci(mod_s2d1, vcov=vcovCL(mod_s2d1,type="HC1",cluster=~FIPS+Province_State)))
-rse_mod_s2d1
-rci_mod_s2d1
-
-summary(mod_s2d2<-glm.nb(daily_count~policy + factor(cities)+ factor(cal_week) + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2d))
+summary(mod_s2d2<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2d))
 stargazer(mod_s2d2, apply.coef = exp, type='text')
 rse_mod_s2d2<-exp(coeftest(mod_s2d2, vcov=vcovCL(mod_s2d2,type="HC1",cluster=~FIPS+Province_State)))
 rci_mod_s2d2<-exp(coefci(mod_s2d2, vcov=vcovCL(mod_s2d2,type="HC1",cluster=~FIPS+Province_State)))
@@ -461,15 +432,8 @@ rse_mod_s2d2
 rci_mod_s2d2
 
 ###remove the non bchc cities 
-county_cases2f<-county_cases2f%>%
-  mutate(policy=treat1*pre_post)
-summary(mod_s2f1<-glm.nb(daily_count~policy + factor(cities)+ factor(cal_week) + offset(log(pop/100000)), data=county_cases2f))
-rse_mod_s2f1<-exp(coeftest(mod_s2f1, vcov=vcovCL(mod_s2f1,type="HC1",cluster=~FIPS+Province_State)))
-rci_mod_s2f1<-exp(coefci(mod_s2f1, vcov=vcovCL(mod_s2f1,type="HC1",cluster=~FIPS+Province_State)))
-rse_mod_s2f1
-rci_mod_s2f1
 
-summary(mod_s2f2<-glm.nb(daily_count~policy + factor(cities)+ factor(cal_week) + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2f))
+summary(mod_s2f2<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2f))
 stargazer(mod_s2f2, apply.coef = exp, type='text')
 rse_mod_s2f2<-exp(coeftest(mod_s2f2, vcov=vcovCL(mod_s2f2,type="HC1",cluster=~FIPS+Province_State)))
 rci_mod_s2f2<-exp(coefci(mod_s2f2, vcov=vcovCL(mod_s2f2,type="HC1",cluster=~FIPS+Province_State)))
@@ -477,10 +441,8 @@ rse_mod_s2f2
 rci_mod_s2f2
 
 ##remove SF 
-county_cases2<-county_cases2%>%
-  mutate(policy=treat1*pre_post)
 
-summary(mod_s2g2<-glm.nb(daily_count~policy + factor(cities)+ factor(cal_week) + at_home + mask_mandate + evict_end + offset(log(pop/100000)),  data=filter(county_cases2, Admin2!="San Francisco")))
+summary(mod_s2g2<-glm.nb(daily_count~treat1*pre_post+ at_home + mask_mandate + evict_end + offset(log(pop/100000)),  data=filter(county_cases2, Admin2!="San Francisco")))
 stargazer(mod_s2g2, apply.coef = exp, type='text')
 rse_mod_s2g2<-exp(coeftest(mod_s2g2, vcov=vcovCL(mod_s2g2,type="HC1",cluster=~FIPS+Province_State)))
 rci_mod_s2g2<-exp(coefci(mod_s2g2, vcov=vcovCL(mod_s2g2,type="HC1",cluster=~FIPS+Province_State)))
@@ -504,7 +466,7 @@ county_cases_weeks<-county_cases2%>%
                              Admin2=="Bexar"~5.4), 
         policy=treat1*pre_post)
 
-summary(mod_s2h2<-glm.nb(daily_count~policy + factor(cities)+ factor(cal_week) + at_home + mask_mandate + evict_end + weeks_pre+ offset(log(pop/100000)),  data=county_cases_weeks))
+summary(mod_s2h2<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_end + weeks_pre+ offset(log(pop/100000)),  data=county_cases_weeks))
 stargazer(mod_s2h2, apply.coef=exp, type='text')
 rse_mod_s2h2<-exp(coeftest(mod_s2h2, vcov=vcovCL(mod_s2h2,type="HC1",cluster=~FIPS+Province_State)))
 rci_mod_s2h2<-exp(coefci(mod_s2h2, vcov=vcovCL(mod_s2h2,type="HC1",cluster=~FIPS+Province_State)))
@@ -526,10 +488,10 @@ mutate(mask_wearing=case_when(Admin2=="San Francisco"~93.8,
             Admin2=="Dallas"~89.8, 
             Admin2=="Harris"~88.8, 
             Admin2=="Bexar"~91.2), 
-       mutate(policy=treat1*pre_post)
+      policy=treat1*pre_post)
   
 
-summary(mod_s2i2<-glm.nb(daily_count~policy + factor(cities)+ factor(cal_week) + at_home + mask_mandate + evict_end + weeks_pre+ pct_age0017+ pct_age1864+ pct_age65plus+pct_transit + mask_wearing+ offset(log(pop/100000)),  data=county_cases_pretrend))
+summary(mod_s2i2<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_end + weeks_pre+ pct_age0017+ pct_age1864+ pct_age65plus+pct_transit + mask_wearing+ offset(log(pop/100000)),  data=county_cases_pretrend))
 stargazer(mod_s2i2, apply.coef=exp, type='text')
 rse_mod_s2i2<-exp(coeftest(mod_s2i2, vcov=vcovCL(mod_s2i2,type="HC1",cluster=~GEOID+Province_State)))
 rci_mod_s2i2<-exp(coefci(mod_s2i2, vcov=vcovCL(mod_s2i2,type="HC1",cluster=~GEOID+Province_State)))

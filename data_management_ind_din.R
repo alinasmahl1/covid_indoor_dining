@@ -1258,8 +1258,7 @@ data$pct_nhwhite[is.na(data$pct_nhwhite)]<-69.6
   data$pct_hisp[is.na(data$pct_hisp)]<-5.3
 
   
-  file(data, file="data/demographic_data.Rdata")
-
+  save(data, file="data/demographic_data.Rdata")
 
 #-----------------------------------------------------------#
 #SENSITIVITY ANALYSIS 

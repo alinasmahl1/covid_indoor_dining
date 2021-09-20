@@ -38,12 +38,13 @@ county_cases_cs<-county_cases%>%
          first_treat=as.Date(first_treat, "%Y-%m-%d"), 
          time= as.numeric(difftime(date,first_treat, units = c("days"))),
          cal_week=factor(week(date)))
-county_cases_cs$daily_count[county_cases1$daily_count< 0] <- 0
+county_cases_cs$daily_count[county_cases_cs$daily_count< 0] <- 0
 
 #two methods to create periods-- 1 use calendar weeks (but then small n/week), or create periods using dates of treatment start (C&S method)
 
 county_cases2_cs1<-county_cases_cs%>%
-  #rather than filtering by time-- limit to 28 days efore the first period and 42 days after last (using actual start date, not lagged)
+  
+  #rather than filtering by time-- limit to 28 days before the first period and 42 days after last (using actual start date, not lagged)
   #making periods start 14 days after treat start
          mutate(period=case_when(date>="2020-03-31"& date<"2020-5-11"~1, 
                           date>="2020-05-11" & date <"2020-05-26"~2, 
@@ -58,45 +59,76 @@ county_cases2_cs1<-county_cases_cs%>%
   #add in population counts
   left_join(population1)%>%
   #create rates  
-  mutate(case_rate=daily_count/pop*100000, 
+  mutate(case_rate=(daily_count/pop)*100000, 
   #temporary solution for taking the log -- since we have zero's
-         log_case=log(daily_count + 1))
+         log_case=log1p(case_rate))
   #create a unique id for each row
-county_cases2_cs$id<-1:nrow(county_cases2_cs)
+county_cases2_cs1$id<-1:nrow(county_cases2_cs1)
 
 table(county_cases2_cs$first.treat, county_cases2_cs$period)
 
 str(county_cases2_cs)
 
   ##Analysis
-  mw.attgt<-att_gt(yname="cases", 
+  mw.attgt<-att_gt(yname="case_rate", 
                    gname="group", 
                    idname="id", 
                    tname="period", 
                    xformla=~pop,
-                   data=county_cases2_cs,
-                   allow_unbalanced_panel = TRUE
+                   data=county_cases2_cs1,
+                   allow_unbalanced_panel = TRUE,
+                   clustervars="FIPS"
                    )
   summary(mw.attgt)
   
   ggdid(mw.attgt)
-  agg.simple <- aggte(mw.attgt, type = "simple")
+
+  #takes a simple weighted average ( weights proportional to the group size)
+    agg.simple <- aggte(mw.attgt, type = "simple")
 summary(agg.simple)
+
+# average treatment effects weighted by different lengths of exposure to the treatment
 agg.es <- aggte(mw.attgt, type = "dynamic")
 summary(agg.es)
+#plot 
 ggdid(agg.es)
-  mw.dyn <- aggte(mw.attgt, type = "dynamic")
-  summary(mw.dyn)
-  
-  #logged cases 
+
+####################################################################################
+#SENSITIVITY ANALYSIS OUTPUT
+#logged cases
   
   mw.attgt_log<-att_gt(yname="log_case", 
                        gname="group", 
                        idname="id", 
                        tname="period", 
-                       xformla=~pop,
-                       data=event_model_cs,
-                       allow_unbalanced_panel = TRUE)  
+                       data=county_cases2_cs1,
+                       allow_unbalanced_panel = TRUE, 
+                       clustervars="FIPS")  
+  
+  summary(mw.attgt_log)
+  
+  ggdid(mw.attgt_log)
+  
+  ####Callaway and Sant'anna sensitivity 1
+  #takes a simple weighted average ( weights proportional to the group size)
+  
+    agg.simple_log <- aggte(mw.attgt_log, type = "simple")
+  summary(agg.simple_log)
+#calculate the OR using ATT from above 
+  1/exp(0.82)
+  #exponentiate the CI's
+ 1/exp(0.21)
+  1/exp(1.4287)
+
+###Callaway and Sant'anna sensitivity 2
+  # average treatment effects weighted by different lengths of exposure to the treatment
+    agg.es_log <- aggte(mw.attgt_log, type = "dynamic")
+  summary(agg.es_log)
+1/exp(0.8622)
+  1/exp(0.2276)
+  1/exp(1.4968)
+  #plot 
+  ggdid(agg.es_log)
   
   ###repeated using weekly periods (but this makes no sense because then we have too small N's/wk)
   #create weekly vars for event model 
@@ -158,23 +190,43 @@ ggdid(agg.es)
   
 #generate a propensity score 1st, using key unbalanced vars. 
   #
- psm<-county_cases2_cs%>%
+ psm<-county_cases2_cs1%>%
    rename(GEOID='FIPS')%>%
   left_join(data,by='GEOID')%>%
    mutate( 
-  #create categorical vars so no non zero obs     
-        pct_poverty1=case_when(pct_poverty<10~10, 
-                               pct_poverty>=10 & pct_poverty<20~20, 
-                               pct_poverty>=20~20), 
        #weeks before treatment
-         weeks_pre=case_when(Admin2=="San Francisco"~23.9, 
-                            Admin2=="Indianapolis"~7.0, ))
+         weeks_pre=case_when(Admin2=="Indianapolis"~7.0, 
+                             Admin2=="Philadelphia"~13.6, 
+                             Admin2=="Milwaukee"~7.0, 
+                             Admin2=="Maricopa"~5.9, 
+                             Admin2=="Fulton"~4.9, 
+                             Admin2=="Charleston"~6.4, 
+                             Admin2=="Travis"~5.4,
+                             Admin2=="Dallas"~5.7, 
+                             Admin2=="Harris"~5.4, 
+                             Admin2=="Bexar"~5.4), 
+       mask_wearing=case_when(Admin2=="San Francisco"~93.8, 
+                              Admin2=="Indianapolis"~79.4, 
+                              Admin2=="Philadelphia"~91.4, 
+                              Admin2=="Milwaukee"~76.1, 
+                              Admin2=="Maricopa"~89.2, 
+                              Admin2=="Fulton"~94.9, 
+                              Admin2=="Charleston"~84.3, 
+                              Admin2=="Travis"~95.3,
+                              Admin2=="Dallas"~89.8, 
+                              Admin2=="Harris"~88.8, 
+                              Admin2=="Bexar"~91.2))
+ psm$pct_nhwhite[is.na(psm$pct_nhwhite)]<-69.6
+ psm$pct_black[is.na(psm$pct_black)]<-26.3
+ psm$pct_hisp[is.na(psm$pct_hisp)]<-5.3
  #create 
  
+ 
+ 
  str(psm$treat1)
- table(psm$pct_poverty, psm$treat1)
+ table(psm$pct_nhwhite, psm$Admin2)
  #run ps 
- psm.model<-glm(treat1~pct_age0017+ pct_age1864+pct_age65plus, data=psm ,family=binomial("logit"))
+ psm.model<-glm(treat1~pct_age0017+ pct_age1864+pct_age65plus +mask_wearing + pct_nhwhite,data=psm ,family=binomial("logit"))
  
  prs_df <- data.frame(pr_score = predict(psm.model, type = "response"),
                       treat1 = psm.model$model$treat1)
