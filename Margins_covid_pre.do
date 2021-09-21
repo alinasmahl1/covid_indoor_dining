@@ -39,6 +39,6 @@ display 1002.914 *28
 margins, dydx(pre_post) at(treat=(1 0))
  display -70.96434-20.20651 =-91.17085
  
- *for per 100,000 calculation take 28082/pop total pop=20,963,027 *100,000=133.96
-display 28082/20963027
-display .0013396*100000
+ *for per 100,000 calculation take 39384/pop total pop=20,963,027 *100,000=187.877
+ di -39384.737/20963027
+di -.00187877*100000

@@ -497,6 +497,8 @@ rse_mod_s2i2<-exp(coeftest(mod_s2i2, vcov=vcovCL(mod_s2i2,type="HC1",cluster=~GE
 rci_mod_s2i2<-exp(coefci(mod_s2i2, vcov=vcovCL(mod_s2i2,type="HC1",cluster=~GEOID+Province_State)))
 rse_mod_s2i2
 rci_mod_s2i2
+
+##See Callaway & Santana Approach.R for sensitivity analysis using C&S approach
   
 #######################################################
 #Event Model 
