@@ -19,6 +19,8 @@ library(emmeans)
 library(inauguration)
 library(foreign)
 library(tidycensus)
+library(readxl)
+library(scales)
 #import data files
 load("data/daily_count.Rdata")
 load("data/event_model1.Rdata")
@@ -119,7 +121,7 @@ dining_closed=as.Date(dining_closed, "%Y-%m-%d"))
 pdf(file="results/figure_1a.pdf")
 
 figure1a<-figure1_data%>%
-  ggplot(aes(x=date, y=cases2)) + 
+  ggplot(aes(x=date, y=cases2))+
   geom_line()+
   scale_linetype_manual(values=c(1, 2, 3))+
   labs(title = "Rolling 7-day average new COVID-19 cases", 
@@ -140,7 +142,7 @@ dev.off()
 
 plots = replicate(8, qplot(1,1), simplify=FALSE)
 library(gridExtra)
-p <- do.call(marrangeGrob, c(figure1a,ncol=1,nrow=1))
+p <- do.call(marrangeGrob, list(grobs=plots,ncol=1,nrow=1))
 
 ggsave("multipage.pdf", p, width=11, height=8.5)
 
