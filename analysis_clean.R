@@ -538,10 +538,12 @@ rse_mod_death
 rci_mod_death
 
 #linear model w/ wild bootstraps (bc small # clusters)
-summary(lin_adj<-lm(daily_count~treat1*pre_post + at_home + mask_mandate + evict_end,  data=county_cases2))
-stargazer(lin_adj, apply.coef = exp, type='text')
-
-boot_lm_interact <- boottest(lin_adj, clustid =c("FIPS", "Province_State"), param = "treat1*pre_post", B = 9999)
+lin_adj<-lm(log(case_rate)~treat1*pre_post + at_home + mask_mandate + evict_end,  data=county_cases2 %>% filter(case_rate>0))
+boot_lm_interact <- boottest(lin_adj, clustid =c("FIPS", "Province_State"), param = "treat1:pre_post", B = 9999)
+boot_lm_interact %>% tidy %>% 
+  mutate(coef=exp(estimate),
+         lci=exp(conf.low),
+         uci=exp(conf.high))
 
 #######################################################
 #Event Model 

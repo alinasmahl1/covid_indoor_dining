@@ -3,3 +3,5 @@
 .RData
 .Ruserdata
 covid_preemption.Rproj
+ub_tests.R
+test.csv
