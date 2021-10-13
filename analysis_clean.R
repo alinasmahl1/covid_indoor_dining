@@ -152,35 +152,73 @@ ggsave("multipage.pdf", p, width=11, height=8.5)
 
 #find means by treat and week
 means <- roll_avg %>% 
+  filter(time>=-7)%>%
   group_by(treat1, time) %>% 
   summarise(casemean = mean(daily_count), 
             mean7da = mean(case_07da), 
             ratemean=mean(caserate_07da),
             wt_meanrate=weighted.mean(caserate_07da, pop),
-            logcasemean=log(casemean))
+            logcasemean=log(casemean), 
+            logratemean=log(ratemean), 
+            wt_logratemean=log(wt_meanrate))
 means
 
-
 pdf(file="results/figure_2.pdf")
-rate_mean1 <- ggplot(data=means, aes(x=time, y=wt_meanrate, color=factor(treat1, labels = c("Comparison", "Treatment")))) +
+rate_mean1 <- ggplot(data=means, aes(x=time, y=ratemean, color=factor(treat1, labels = c("Comparison", "Treatment")))) +
   geom_line(size=1.5)+
   geom_vline(xintercept = 14)+
   labs(title = " Rolling 7 day average rate new COVID cases", 
        color="Treat v Comparison",
        y = "New case rate per 100,000",
        x = "Days Since Reopening (comparison)/Delayed Reopening (treatment)") +
-  coord_cartesian(ylim = c(0, 15))+ 
+  scale_y_continuous(trans="log", breaks=pretty_breaks(n=5))+
+#  coord_cartesian(ylim = c(0, 10))+ 
   theme(legend.position="bottom") + theme_bw() +
   scale_color_manual(values=c("#5445b1", "#cd3341"))
 
 rate_mean1
+dev.off()
+
+###############################################################################
+#APPENDIX Figure D4
+#final figure for deaths 
+means_death <- roll_avg_death %>% 
+  group_by(treat1, time) %>% 
+  summarise(deathmean = mean(daily_deaths), 
+            mean7da = mean(deaths_07da), 
+            wt_ratemean=weighted.mean(deathrate_07da, pop),
+            ratemean=mean(deathrate_07da), 
+            logdeathmean=log(mean7da),
+            logratemean=log(ratemean),
+            wt_logdeathmean=log(wt_ratemean))%>%
+  mutate(lograte=log(1+ratemean))
+
+
+pdf(file="results/figure_2b_appendix.pdf")
+rate_mean1_death <- ggplot(data=means_death, aes(x=time, y=ratemean, color=factor(treat1, labels = c("Comparison", "Treatment")))) +
+  geom_line(size=1.5)+
+  geom_vline(xintercept = 35)+
+  labs(title = "Rolling 7 day average log of new COVID Deaths", 
+       color="Treat v Comparison",
+       y = "Log of New Death Rate per 100,000",
+       x = "Days Since Reopening (comparison)/Delayed Reopening (treatment)") +
+  theme(legend.position="bottom") +
+  scale_y_continuous(trans="log", breaks=pretty_breaks(n=5))+
+  #using colors from inauguration_2021
+  scale_color_manual(values=c("#5445b1", "#cd3341"))+
+  coord_cartesian(ylim = c(0.1, 0.50))
+  
+
+
+rate_mean1_death
+
 dev.off()
 ###############################################################################
 #Parallel trends analysis 
 #limit data to pre-period
 
 pre_period<-county_cases2%>%
-  filter(time<1)
+  filter(time<1 & time>=-7)
 
 summary(pretrend<-lm(daily_count ~treat1*time,  data = pre_period))
 
@@ -192,7 +230,7 @@ summary(pretrend<-glm.nb(daily_count ~treat1*time + offset(log(pop/100000)),  da
 
 #repeated w/ deaths 
 pre_period_d<-county_deaths2%>%
-  filter(time<1)
+  filter(time<35)
 
 summary(pretrend_d<-lm(daily_deaths ~treat1*time,  data = pre_period_d))
 
@@ -201,31 +239,6 @@ summary(pretrend<-lm(daily_deaths ~treat1*time + offset(log(pop/100000)),  data 
 
 #w/ negative binomial
 summary(pretrend<-glm.nb(daily_deaths ~treat1*time + offset(log(pop/100000)),  data = pre_period_d))
-
-###############################################################################
-#APPENDIX Figure D4
-#final figure for deaths 
-means_death <- roll_avg_death %>% 
-  group_by(treat1, time) %>% 
-  summarise(deathmean = mean(daily_deaths), 
-            mean7da = mean(deaths_07da), 
-            wt_ratemean=weighted.mean(deathrate_07da, pop),
-            ratemean=mean(deathrate_07da))
-
-pdf(file="results/figure_2b_appendix.pdf")
-rate_mean1_death <- ggplot(data=means_death, aes(x=time, y=wt_ratemean, color=factor(treat1, labels = c("Comparison", "Treatment")))) +
-  geom_line(size=1.5)+
-  geom_vline(xintercept = 35)+
-  labs(title = "Rolling 7 day average rate new COVID cases", 
-       color="Treat v Comparison",
-       y = "New Death Rate per 100,000",
-       x = "Days Since Reopening (comparison)/Delayed Reopening (treatment)") +
-  theme(legend.position="bottom") +
-  #using colors from inauguration_2021
-  scale_color_manual(values=c("#5445b1", "#cd3341"))
-rate_mean1_death
-
-dev.off()
 
 
 ##############################################################################
@@ -308,6 +321,9 @@ rci_mod_nb3c<-exp(coefci(mod_nb3c, vcov=vcovCL(mod_nb3c,type="HC1",cluster=~FIPS
 rse_mod_nb3c
 rci_mod_nb3c
 
+summary(mod_nb3c<-glm.nb(daily_deaths~treat1*pre_post + at_home + mask_mandate + evict_end + offset(log(pop/100000)),  data=county_deaths2b))
+
+
 #compare models 
 models <- list(mod_nb1, mod_nb1off, mod_nb2off, mod_nb3)
 models1<-list(mod_nb3a, mod_nb3b, mod_nb3c)
@@ -327,7 +343,7 @@ rci_mod_nb3
 
 
 #adjusted
-summary(lin_adj<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_end + offset(log(pop/100000)),  data=county_cases2))
+summary(lin_adj<-lm(daily_count~treat1*pre_post + at_home + mask_mandate + evict_end + offset(log(pop/100000)),  data=county_cases2))
 stargazer(mod_nb3c, apply.coef = exp, type='text')
 anova(mod_nb3b, mod_nb3c,  test="Chisq")
 rse_mod_nb3c<-exp(coeftest(mod_nb3c, vcov=vcovCL(mod_nb3c,type="HC1",cluster=~FIPS)))
@@ -374,6 +390,14 @@ rci_mod_nb3d<-exp(coefci(mod_nb3d, vcov=vcovCL(mod_nb3d,type="HC1",cluster=~FIPS
 rse_mod_nb3d
 rci_mod_nb3d
 
+#state fixed effect
+summary(mod_s2e2<-glm.nb(daily_count~treat1*pre_post + factor(Province_State)+ at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2e))
+stargazer(mod_s2e2, apply.coef = exp, type='text')
+rse_mod_s2e2<-exp(coeftest(mod_s2e2, vcov=vcovCL(mod_s2e2,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_s2e2<-exp(coefci(mod_s2e2, vcov=vcovCL(mod_s2e2,type="HC1",cluster=~FIPS+Province_State)))
+rse_mod_s2e2
+rci_mod_s2e2
+
 #*two way fixed effects model (controlling for city and calendar week time)
 #create new var that is essentially interaction of treat and pre_post (0 in pre 1 for treat and control, 1 for treat 14 days post time zero)
 county_cases2<-county_cases2%>%
@@ -389,13 +413,13 @@ rci_mod_nb3
 AIC(mod_nb3)
 AIC(mod_nb3a)
 
-#state fixed effect
-summary(mod_s2e2<-glm.nb(daily_count~treat1*pre_post + factor(Province_State)+ at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2e))
-stargazer(mod_s2e2, apply.coef = exp, type='text')
-rse_mod_s2e2<-exp(coeftest(mod_s2e2, vcov=vcovCL(mod_s2e2,type="HC1",cluster=~FIPS+Province_State)))
-rci_mod_s2e2<-exp(coefci(mod_s2e2, vcov=vcovCL(mod_s2e2,type="HC1",cluster=~FIPS+Province_State)))
-rse_mod_s2e2
-rci_mod_s2e2
+#increase pre period to 4 weeks 
+summary(mod_s2e2a<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_ban + offset(log(pop/100000)),  data=county_cases2e1))
+stargazer(mod_s2e2a, apply.coef = exp, type='text')
+rse_mod_s2e2a<-exp(coeftest(mod_s2e2a, vcov=vcovCL(mod_s2e2a,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_s2e2a<-exp(coefci(mod_s2e2a, vcov=vcovCL(mod_s2e2a,type="HC1",cluster=~FIPS+Province_State)))
+rse_mod_s2e2a
+rci_mod_s2e2a
 
 #Increase study period to 12 weeks 
 
@@ -501,7 +525,22 @@ rse_mod_s2i2
 rci_mod_s2i2
 
 ##See Callaway & Santana Approach.R for sensitivity analysis using C&S approach
-  
+
+#repeat main adjusted model for deaths
+summary(mod_death<-glm.nb(daily_deaths~treat1*pre_post + at_home + mask_mandate + evict_end + offset(log(pop/100000)),  data=county_deaths2))
+stargazer(mod_death, apply.coef = exp, type='text')
+rse_mod_death<-exp(coeftest(mod_death, vcov=vcovCL(mod_death,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_death<-exp(coefci(mod_death, vcov=vcovCL(mod_death,type="HC1",cluster=~FIPS+Province_State)))
+rse_mod_death
+rci_mod_death
+
+#linear model w/ wild bootstraps (bc small # clusters)
+summary(lin_adj<-lm(daily_count~treat1*pre_post + at_home + mask_mandate + evict_end + offset(log(pop/100000)),  data=county_cases2))
+stargazer(lin_adj, apply.coef = exp, type='text')
+
+
+boot_lm_interact <- boottest(lin_adj, clustid =c("FIPS", "Province_State"), param = "treat1*pre_post", B = 9999)
+
 #######################################################
 #Event Model 
 #######################################################
