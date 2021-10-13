@@ -21,6 +21,9 @@ library(foreign)
 library(tidycensus)
 library(readxl)
 library(scales)
+library(fwildclusterboot)
+library(lmboot)
+
 #import data files
 load("data/daily_count.Rdata")
 load("data/event_model1.Rdata")
@@ -343,7 +346,7 @@ rci_mod_nb3
 
 
 #adjusted
-summary(lin_adj<-lm(daily_count~treat1*pre_post + at_home + mask_mandate + evict_end + offset(log(pop/100000)),  data=county_cases2))
+summary(lin_adj<-lm(daily_count~treat1*pre_post + at_home + mask_mandate + evict_end ,  data=county_cases2))
 stargazer(mod_nb3c, apply.coef = exp, type='text')
 anova(mod_nb3b, mod_nb3c,  test="Chisq")
 rse_mod_nb3c<-exp(coeftest(mod_nb3c, vcov=vcovCL(mod_nb3c,type="HC1",cluster=~FIPS)))
@@ -535,9 +538,8 @@ rse_mod_death
 rci_mod_death
 
 #linear model w/ wild bootstraps (bc small # clusters)
-summary(lin_adj<-lm(daily_count~treat1*pre_post + at_home + mask_mandate + evict_end + offset(log(pop/100000)),  data=county_cases2))
+summary(lin_adj<-lm(daily_count~treat1*pre_post + at_home + mask_mandate + evict_end,  data=county_cases2))
 stargazer(lin_adj, apply.coef = exp, type='text')
-
 
 boot_lm_interact <- boottest(lin_adj, clustid =c("FIPS", "Province_State"), param = "treat1*pre_post", B = 9999)
 
