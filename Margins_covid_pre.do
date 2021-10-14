@@ -18,5 +18,6 @@ local lci=(b[1,1]+1.96*sqrt(V[1,1]))*28
 local uci=(b[1,1]-1.96*sqrt(V[1,1]))*28
 di `est' " (" `lci' " to " `uci' ")"
 * calculate per 100,000
- di -39384.737/20963027
-di -.00187877*100000
+ di  `est'/20963027
+ di  `est'/20963027 * 100000
+
