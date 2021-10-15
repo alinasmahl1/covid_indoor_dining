@@ -170,9 +170,9 @@ pdf(file="results/figure_2.pdf")
 rate_mean1 <- ggplot(data=means, aes(x=time, y=ratemean, color=factor(treat1, labels = c("Comparison", "Treatment")))) +
   geom_line(size=1.5)+
   geom_vline(xintercept = 14)+
-  labs(title = " Rolling 7 day average rate new COVID cases", 
+  labs(title = " Average weekly new COVID case rates", 
        color="Treat v Comparison",
-       y = "New case rate per 100,000",
+       y = "Log of new case rate per 100,000",
        x = "Days Since Reopening (comparison)/Delayed Reopening (treatment)") +
   scale_y_continuous(trans="log", breaks=pretty_breaks(n=5))+
 #  coord_cartesian(ylim = c(0, 10))+ 
@@ -201,7 +201,7 @@ pdf(file="results/figure_2b_appendix.pdf")
 rate_mean1_death <- ggplot(data=means_death, aes(x=time, y=ratemean, color=factor(treat1, labels = c("Comparison", "Treatment")))) +
   geom_line(size=1.5)+
   geom_vline(xintercept = 35)+
-  labs(title = "Rolling 7 day average log of new COVID Deaths", 
+  labs(title = "Average Weekly COVID Death rates", 
        color="Treat v Comparison",
        y = "Log of New Death Rate per 100,000",
        x = "Days Since Reopening (comparison)/Delayed Reopening (treatment)") +
