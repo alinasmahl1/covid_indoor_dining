@@ -163,21 +163,22 @@ means <- roll_avg %>%
             wt_meanrate=weighted.mean(caserate_07da, pop),
             logcasemean=log(casemean), 
             logratemean=log(ratemean), 
-            wt_logratemean=log(wt_meanrate))
+            wt_logratemean=log(wt_meanrate))%>%
+  mutate(treat=factor(treat1))
 means
 
 pdf(file="results/figure_2.pdf")
-rate_mean1 <- ggplot(data=means, aes(x=time, y=ratemean, color=factor(treat1, labels = c("Comparison", "Treatment")))) +
-  geom_line(size=1.5)+
+rate_mean1 <- ggplot(data=means, aes(x=time, y=ratemean, group=treat)) +
+  geom_line(aes(linetype=treat))+
   geom_vline(xintercept = 14)+
-  labs(title = " Average weekly new COVID case rates", 
-       color="Treat v Comparison",
+  labs(group="Treat v Comparison",
        y = "Log of new case rate per 100,000",
        x = "Days Since Reopening (comparison)/Delayed Reopening (treatment)") +
   scale_y_continuous(trans="log", breaks=pretty_breaks(n=5))+
 #  coord_cartesian(ylim = c(0, 10))+ 
   theme(legend.position="bottom") + theme_bw() +
-  scale_color_manual(values=c("#5445b1", "#cd3341"))
+  scale_linetype_discrete(name="Treat v Comparison", labels=c("Comparison", "Treatment"))
+ # scale_color_manual(values=c("#5445b1", "#cd3341"))
 
 rate_mean1
 dev.off()
@@ -201,8 +202,7 @@ pdf(file="results/figure_2b_appendix.pdf")
 rate_mean1_death <- ggplot(data=means_death, aes(x=time, y=ratemean, color=factor(treat1, labels = c("Comparison", "Treatment")))) +
   geom_line(size=1.5)+
   geom_vline(xintercept = 35)+
-  labs(title = "Average Weekly COVID Death rates", 
-       color="Treat v Comparison",
+  labs(color="Treat v Comparison",
        y = "Log of New Death Rate per 100,000",
        x = "Days Since Reopening (comparison)/Delayed Reopening (treatment)") +
   theme(legend.position="bottom") +
@@ -230,7 +230,9 @@ pretrend<-lm(daily_count ~treat1*time + offset(log(pop/100000)),  data = pre_per
 
 #repeated w/ negative binomial
 summary(pretrend<-glm.nb(daily_count ~treat1*time + offset(log(pop/100000)),  data = pre_period))
-
+exp(coefci(pretrend, level=0.95))
+rci_mod_nbpre<-exp(coefci(pretrend, vcov=vcovCL(pretrend,type="HC1",cluster=~FIPS+Province_State)))
+rci_mod_nbpre
 #repeated w/ deaths 
 pre_period_d<-county_deaths2%>%
   filter(time<35)
@@ -238,10 +240,14 @@ pre_period_d<-county_deaths2%>%
 summary(pretrend_d<-lm(daily_deaths ~treat1*time,  data = pre_period_d))
 
 #w/ offset
-summary(pretrend<-lm(daily_deaths ~treat1*time + offset(log(pop/100000)),  data = pre_period_d))
+summary(pretrend_d<-lm(daily_deaths ~treat1*time + offset(log(pop/100000)),  data = pre_period_d))
 
 #w/ negative binomial
-summary(pretrend<-glm.nb(daily_deaths ~treat1*time + offset(log(pop/100000)),  data = pre_period_d))
+summary(pretrend_d<-glm.nb(daily_deaths ~treat1*time + offset(log(pop/100000)),  data = pre_period_d))
+rse_pretrend_d<-exp(coeftest(pretrend_d, vcov=vcovCL(pretrend_d,type="HC1",cluster=~FIPS + Province_State)))
+rci_mod_nbpre_d<-exp(coefci(pretrend_d, vcov=vcovCL(pretrend_d,type="HC1",cluster=~FIPS+Province_State)))
+rse_pretrend_d
+rci_mod_nbpre_d
 
 
 ##############################################################################
@@ -640,7 +646,7 @@ rci_mod_e4wk
 
 
 ##############################################################################
-#Event Study Model: Appendix FIgure D3
+#Event Study Model: Figure 3
 
 #load dataset w/ output from event study model
 dta<-read_excel("data/tabled3.xlsx")
@@ -682,20 +688,19 @@ ggplot(data=dta, aes(x=week, y=coef, group=type))+
   geom_hline(yintercept = 1, lty=2)+
   geom_vline(xintercept = 0, lty=2)+
   geom_line(aes(color=type))+
-  geom_point(aes(shape=type,fill=type), color="black") + 
+  geom_point(aes(shape=type,fill=type), color="black", size=3) + 
   scale_y_continuous(trans="log", breaks=2^c(-1:5))+
   scale_x_continuous(breaks=seq(-4, 12, by=2))+
   scale_shape_manual(values=c(21, 22, 23), name="")+
-  scale_fill_brewer(type="qual", palette=2, name="")+
-  scale_color_brewer(type="qual", palette=2, name="")+
+  scale_fill_grey( name="")+
+  scale_color_grey( name="")+
   labs(title = "",
        y = "IRR (95% CI)",
        x = "Weeks since indoor dining allowed to re-open") +
   theme_bw()+
-  theme(legend.text=element_text(color="black", size=fontsize),
+  theme(legend.text=element_text(color="black", size=10),
         legend.background = element_blank(),
-        #legend.position = "bottom",
-        legend.position=c(0.2,.8),
+        legend.position="bottom",
         axis.text=element_text(color="black", size=fontsize),
         axis.title=element_text(color="black", size=fontsize, face="bold"),
         plot.title = element_text(color="black", size=fontsize, face="bold"),
