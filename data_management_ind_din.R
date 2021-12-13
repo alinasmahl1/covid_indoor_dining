@@ -108,7 +108,7 @@ county_cases1<-county_cases%>%
            #San Francisco
            Admin2=="San Francisco"~"2020-04-17", 
            #Milwaukee
-           Admin2=="Milwaukee"~"2020-05-14", 
+           Admin2=="Milwaukee"~"2020-07-16", 
            #indianapolis
            Admin2=="Marion"~"2020-07-09",
            Admin2=="Charleston"~"2020-07-01"), 
