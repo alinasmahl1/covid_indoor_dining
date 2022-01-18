@@ -12,8 +12,6 @@ library(fastDummies)
 library(plm)
 
 #IMPORT COUNTY LEVEL DATA
-county_cases<-fread("data/time_series_covid19_confirmed_US_oct14.csv")
-
 county_cases<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv")
 county_deaths<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv")
 #limit dataset to our counties/cities-- select cities wherever available 

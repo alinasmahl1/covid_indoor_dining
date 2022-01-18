@@ -22,7 +22,7 @@ library(tidycensus)
 library(readxl)
 library(scales)
 library(fwildclusterboot)
-library(lmboot)
+library(broom)
 
 #import data files
 load("data/daily_count.Rdata")
