@@ -249,7 +249,6 @@ rci_mod_nbpre_d<-exp(coefci(pretrend_d, vcov=vcovCL(pretrend_d,type="HC1",cluste
 rse_pretrend_d
 rci_mod_nbpre_d
 
-
 ##############################################################################
 #Model Building 
 #############################################################################
@@ -302,7 +301,7 @@ rci_mod_nb3
 
 ########add other policies########
 #stay at home order
-summary(mod_nb3a<-glm.nb(daily_count~treat1*pre_post + factor(cities)+ factor(cal_week) + at_home + offset(log(pop/100000)), data=county_cases2))
+summary(mod_nb3a<-glm.nb(daily_count~treat1*pre_post + at_home + offset(log(pop/100000)), data=county_cases2))
 stargazer(mod_nb3a, apply.coef = exp, type='text')
 anova(mod_nb3, mod_nb3a,  test="Chisq")
 rse_mod_nb3f<-exp(coeftest(mod_nb3, vcov=vcovCL(mod_nb3,type="HC1",cluster=~FIPS+Province_State)))
@@ -311,7 +310,7 @@ rse_mod_nb3
 rci_mod_nb3
 
 #mask mandate
-summary(mod_nb3b<-glm.nb(daily_count~treat1*pre_post + factor(cities)+ factor(cal_week) + at_home + mask_mandate + offset(log(pop/100000)), data=county_cases2))
+summary(mod_nb3b<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + offset(log(pop/100000)), data=county_cases2))
 stargazer(mod_nb3b, apply.coef = exp, type='text')
 anova(mod_nb3a, mod_nb3b,  test="Chisq")
 rse_mod_nb3b<-exp(coeftest(mod_nb3b, vcov=vcovCL(mod_nb3b,type="HC1",cluster=~FIPS+Province_State)))
@@ -489,16 +488,16 @@ rci_mod_s2g2
 
 county_cases_weeks<-county_cases2%>%
   mutate(weeks_pre=case_when(Admin2=="San Francisco"~23.9, 
-                             Admin2=="Indianapolis"~7.0, 
+                             Admin2=="Indianapolis"~7.9, 
                              Admin2=="Philadelphia"~13.6, 
-                             Admin2=="Milwaukee"~7.0, 
+                             Admin2=="Milwaukee"~7.1, 
                              Admin2=="Maricopa"~5.9, 
                              Admin2=="Fulton"~4.9, 
-                             Admin2=="Charleston"~6.4, 
+                             Admin2=="Charleston"~6.6, 
                              Admin2=="Travis"~5.4,
-                             Admin2=="Dallas"~5.7, 
+                             Admin2=="Dallas"~5.6, 
                              Admin2=="Harris"~5.4, 
-                             Admin2=="Bexar"~5.4), 
+                             Admin2=="Bexar"~6.4), 
         policy=treat1*pre_post)
 
 summary(mod_s2h2<-glm.nb(daily_count~treat1*pre_post + at_home + mask_mandate + evict_end + weeks_pre+ offset(log(pop/100000)),  data=county_cases_weeks))
@@ -601,7 +600,6 @@ rse_mod_e4c<-exp(coeftest(mod_e4c, vcov=vcovCL(mod_e4c,type="HC1",cluster=~FIPS+
 rci_mod_e4c<-exp(coefci(mod_e4c, vcov=vcovCL(mod_e4c,type="HC1",cluster=~FIPS+Province_State)))
 rse_mod_e4c
 rci_mod_e4c
-
 
 #store model output
 event_models<-list(mod_e1, mod_e2, mod_e3, mod_e4a, mod_e4b, mod_e4c)

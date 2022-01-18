@@ -12,6 +12,8 @@ library(fastDummies)
 library(plm)
 
 #IMPORT COUNTY LEVEL DATA
+county_cases<-fread("data/time_series_covid19_confirmed_US_oct14.csv")
+
 county_cases<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv")
 county_deaths<-fread("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv")
 #limit dataset to our counties/cities-- select cities wherever available 
@@ -91,11 +93,11 @@ county_cases1<-county_cases%>%
            Admin2=="Bexar"~ "2020-06-05",
            Admin2=="Maricopa" ~"2020-05-16",
            #San Francisco
-           Admin2=="San Francisco"~"2020-05-14", 
+           Admin2=="San Francisco"~"2020-05-18", 
            #Milwaukee
            Admin2=="Milwaukee"~"2020-06-05", 
            #indianapolis
-           Admin2=="Marion"~"2020-05-18",
+           Admin2=="Marion"~"2020-05-15",
            Admin2=="Charleston"~"2020-05-31"), 
          stay_start=as.Date(stay_start, "%Y-%m-%d"), 
          #create mask mandate var     
@@ -138,7 +140,7 @@ county_cases1<-county_cases%>%
            #San Francisco- no end during study
            Admin2=="San Francisco"~"2020-12-31", 
            #Milwaukee
-           Admin2=="Milwaukee"~"2020-05-27", 
+           Admin2=="Milwaukee"~"2020-05-26", 
            #indianapolis
            Admin2=="Marion"~"2020-08-14",
            Admin2=="Charleston"~"2020-05-15"),
@@ -338,11 +340,11 @@ event_model<-county_cases1%>%
       Admin2=="Bexar"~ "2020-06-05",
       Admin2=="Maricopa" ~"2020-05-16",
       #San Francisco
-      Admin2=="San Francisco"~"2020-05-14", 
+      Admin2=="San Francisco"~"2020-05-18", 
       #Milwaukee
       Admin2=="Milwaukee"~"2020-06-05", 
       #indianapolis
-      Admin2=="Marion"~"2020-05-18",
+      Admin2=="Marion"~"2020-05-15",
       Admin2=="Charleston"~"2020-05-31"), 
     stay_start=as.Date(stay_start, "%Y-%m-%d"), 
     #create mask mandate var     
@@ -353,7 +355,7 @@ event_model<-county_cases1%>%
       #phoenix
       Admin2=="Maricopa"~"2020-06-20",
       Admin2=="San Francisco"~"2020-04-17", 
-      Admin2=="Milwaukee"~"2020-05-14", 
+      Admin2=="Milwaukee"~"2020-07-16", 
       #indianapolis
       Admin2=="Marion"~"2020-07-09",
       Admin2=="Charleston"~"2020-07-01"), 
@@ -379,7 +381,7 @@ event_model<-county_cases1%>%
       Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar")~ "2020-05-19",
       Admin2=="Maricopa"~"2020-10-31",
       Admin2=="San Francisco"~"2020-12-31", 
-      Admin2=="Milwaukee"~"2020-05-27", 
+      Admin2=="Milwaukee"~"2020-05-26", 
       #indianapolis
       Admin2=="Marion"~"2020-08-14",
       Admin2=="Charleston"~"2020-05-15"),
@@ -828,11 +830,11 @@ county_deaths1<-county_deaths%>%
            Admin2=="Bexar"~ "2020-06-05",
            Admin2=="Maricopa" ~"2020-05-16",
            #San Francisco
-           Admin2=="San Francisco"~"2020-05-14", 
+           Admin2=="San Francisco"~"2020-05-18", 
            #Milwaukee
            Admin2=="Milwaukee"~"2020-06-05", 
            #indianapolis
-           Admin2=="Marion"~"2020-05-18",
+           Admin2=="Marion"~"2020-05-16",
            Admin2=="Charleston"~"2020-05-31"),
          stay_start=as.Date(stay_start, "%Y-%m-%d"), 
          #create mask mandate var     
@@ -843,7 +845,7 @@ county_deaths1<-county_deaths%>%
            #phoenix
            Admin2=="Maricopa"~"2020-06-18",
            Admin2=="San Francisco"~"2020-07-01", 
-           Admin2=="Milwaukee"~"2020-05-14", 
+           Admin2=="Milwaukee"~"2020-07-16", 
            #indianapolis
            Admin2=="Marion"~"2020-07-09",
            Admin2=="Charleston"~"2020-07-01"), 
@@ -869,7 +871,7 @@ county_deaths1<-county_deaths%>%
            Admin2 %in% c("Travis", "Dallas", "Harris", "Bexar")~ "2020-05-19",
            Admin2=="Maricopa"~"2020-10-31",
            Admin2=="San Francisco"~"2020-12-31", 
-           Admin2=="Milwaukee"~"2020-05-27", 
+           Admin2=="Milwaukee"~"2020-05-26", 
            #indianapolis
            Admin2=="Marion"~"2020-08-14",
            Admin2=="Charleston"~"2020-05-15"),
